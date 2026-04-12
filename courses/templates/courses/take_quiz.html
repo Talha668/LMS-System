@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Taking Quiz: {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-question-circle"></i>
+                    {{ quiz.title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <small>Question {{ attempt.current_question|add:1 }} of {{ quiz.questions.count }}</small>
+                        <small>{{ progress|floatformat:0 }}% Complete</small>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ progress }}%"></div>
+                    </div>
+                </div>
+
+                <!-- Quiz Description -->
+                {% if quiz.description %}
+                <div class="alert alert-info">
+                    {{ quiz.description }}
+                </div>
+                {% endif %}
+
+                <!-- Current Question -->
+                <div class="question-card">
+                    <h5 class="question-text">{{ current_question.question_text }}</h5>
+                    <p class="text-muted">
+                        <small>
+                            Points: {{ current_question.points }} | 
+                            Type: {{ current_question.get_question_type_display }}
+                        </small>
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if current_question.question_type == 'multiple_choice' or current_question.question_type == 'true_false' %}
+                            <!-- Multiple Choice / True False -->
+                            <div class="choices-container">
+                                {% for choice in form.selected_choice.field.queryset %}
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" 
+                                           name="selected_choice" 
+                                           id="choice{{ choice.id }}" 
+                                           value="{{ choice.id }}"
+                                           {% if form.selected_choice.value == choice.id %}checked{% endif %}>
+                                    <label class="form-check-label" for="choice{{ choice.id }}">
+                                        {{ choice.choice_text }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                        {% elif current_question.question_type == 'short_answer' %}
+                            <!-- Short Answer -->
+                            <div class="form-group">
+                                <textarea name="text_answer" class="form-control" rows="4" 
+                                          placeholder="Type your answer here...">{% if form.text_answer.value %}{{ form.text_answer.value }}{% endif %}</textarea>
+                            </div>
+                        {% endif %}
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                {% if attempt.current_question|add:1 == quiz.questions.count %}
+                                    Finish Quiz
+                                {% else %}
+                                    Next Question
+                                {% endif %}
+                            </button>
+                            
+                            <a href="{% url 'lesson_detail' course_id lesson_id %}" class="btn btn-secondary ms-2">
+                                Cancel Quiz
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

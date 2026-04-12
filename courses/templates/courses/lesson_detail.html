@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ lesson.title }} - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Courses</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'course_dashboard' course.id %}">{{ course.title }}</a></li>
+                <li class="breadcrumb-item active">{{ lesson.title }}</li>
+            </ol>
+        </nav>
+
+        <h1>{{ lesson.title }}</h1>
+        
+        {% if lesson.video_url %}
+        <div class="ratio ratio-16x9 mb-4">
+            <iframe src="{{ lesson.video_url }}" allowfullscreen></iframe>
+        </div>
+        {% endif %}
+
+        <div class="lesson-content">
+            {{ lesson.content|linebreaks }}
+        </div>
+
+        <div class="mt-4">
+            <a href="{% url 'course_dashboard' course.id %}" class="btn btn-secondary">Back to Course</a>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Lesson Info</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Duration:</strong> {{ lesson.duration }} minutes</p>
+                <p><strong>Module:</strong> {{ lesson.module.title }}</p>
+                <p><strong>Course:</strong> {{ course.title }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="mt-4">
+        {% if not lesson_progress.completed %}
+        <form method="post" action="{% url 'mark_lesson_completed' course.id lesson.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-check"></i> Mark as Completed
+            </button>
+        </form>
+        {% else %}
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i> You've completed this lesson on {{ lesson_progress.completed_at|date:"M d, Y" }}
+        </div>
+        {% endif %}
+    </div>
+    <!-- Add debug info to see what's available --> 
+    <div class="alert alert-warning">
+        <small>
+            <strong>Debug Info:</strong><br>
+            Lesson: {{ lesson.title }}<br>
+            Has quiz attribute: {{ lesson.quiz }}<br>
+            Has quiz: {% if lesson.quiz %}Yes{% else %}No{% endif %}<br>
+            Quiz active: {% if lesson.quiz %}{{ lesson.quiz.is_active }}{% else %}No quiz{% endif %}<br>
+            Quiz URL: {% url 'start_quiz' course.id lesson.id %}
+        </small> 
+    </div>
+    <!-- Add this to courses/lesson_detail.html after the lesson content -->
+    <div class="mt-4">
+        {% if lesson.quiz and lesson.quiz.is_active %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-question-circle"></i> Lesson Quiz</h5>
+            </div>
+            <div class="card-body">
+                <p>Test your knowledge with this lesson quiz!</p>
+                <p class="text-muted">
+                    <small>
+                        <i class="fas fa-info-circle"></i>
+                        Passing score: {{ lesson.quiz.passing_score }}% | 
+                        Time limit: {{ lesson.quiz.time_limit }} min | 
+                        Attempts: {{ lesson.quiz.max_attempts }} maximum
+                     </small>
+                </p>
+                <a href="{% url 'start_quiz' course.id lesson.id %}" class="btn btn-success">
+                    <i class="fas fa-play"></i> Start Quiz
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

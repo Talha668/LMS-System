@@ -1,0 +1,111 @@
+<!-- courses/templates/courses/course_discussions.html -->
+{% extends 'base.html' %}
+
+{% block title %}Discussions - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Courses</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'course_dashboard' course.id %}">{{ course.title }}</a></li>
+                <li class="breadcrumb-item active">Discussions</li>
+            </ol>
+        </nav>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Course Discussions</h1>
+            <a href="{% url 'course_dashboard' course.id %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Course
+            </a>
+        </div>
+
+        <!-- New Thread Form -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-plus-circle"></i> Start New Discussion</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ thread_form.title.id_for_label }}" class="form-label">Title</label>
+                        {{ thread_form.title }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ thread_form.content.id_for_label }}" class="form-label">Content</label>
+                        {{ thread_form.content }}
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-paper-plane"></i> Create Discussion
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Discussion Threads List -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-comments"></i>
+                    Discussion Threads ({{ threads.count }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if threads %}
+                    {% for thread in threads %}
+                    <div class="discussion-thread mb-4 pb-3 border-bottom">
+                        {% if thread.is_pinned %}
+                        <span class="badge bg-warning mb-2">
+                            <i class="fas fa-thumbtack"></i> Pinned
+                        </span>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h5 class="mb-1">
+                                    <a href="{% url 'discussion_thread' course.id thread.id %}" class="text-decoration-none">
+                                        {{ thread.title }}
+                                    </a>
+                                    {% if thread.is_locked %}
+                                    <span class="badge bg-secondary ms-1">
+                                        <i class="fas fa-lock"></i> Locked
+                                    </span>
+                                    {% endif %}
+                                </h5>
+                                <p class="text-muted mb-2">{{ thread.content|truncatewords:30 }}</p>
+                                <div class="d-flex text-muted small">
+                                    <span class="me-3">
+                                        <i class="fas fa-user"></i> {{ thread.author.username }}
+                                    </span>
+                                    <span class="me-3">
+                                        <i class="fas fa-clock"></i> {{ thread.created_at|timesince }} ago
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-reply"></i> {{ thread.reply_count }} replies
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                {% if thread.reply_count > 0 %}
+                                <div class="badge bg-light text-dark">
+                                    Latest: {{ thread.replies.last.created_at|timesince }} ago
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                        <h4>No discussions yet</h4>
+                        <p class="text-muted">Be the first to start a discussion!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Quiz Results: {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header {% if attempt.passed %}bg-success{% else %}bg-danger{% endif %} text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-chart-bar"></i>
+                    Quiz Results: {{ quiz.title }}
+                </h4>
+            </div>
+            <div class="card-body text-center">
+                <!-- Result Header -->
+                {% if attempt.passed %}
+                <div class="alert alert-success">
+                    <h2><i class="fas fa-trophy"></i> Congratulations!</h2>
+                    <h4>You passed the quiz!</h4>
+                </div>
+                {% else %}
+                <div class="alert alert-danger">
+                    <h2><i class="fas fa-times-circle"></i> Quiz Not Passed</h2>
+                    <h4>Keep practicing!</h4>
+                </div>
+                {% endif %}
+
+                <!-- Score Circle -->
+                <div class="score-circle mx-auto mb-4 
+                    {% if attempt.passed %}score-passed{% else %}score-failed{% endif %}">
+                    <div class="score-text">
+                        <h1 class="mb-0">{{ attempt.score|floatformat:0 }}%</h1>
+                        <small>Your Score</small>
+                    </div>
+                </div>
+
+                <!-- Quiz Details -->
+                <div class="row text-center mb-4">
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <h5 class="text-primary mb-0">{{ attempt.score|floatformat:0 }}%</h5>
+                            <small>Score</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <h5 class="text-info mb-0">{{ quiz.passing_score }}%</h5>
+                            <small>Passing Score</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <h5 class="text-success mb-0">
+                                {% if attempt.passed %}PASSED{% else %}FAILED{% endif %}
+                            </h5>
+                            <small>Result</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Time and Attempt Info -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i>
+                            Completed: {{ attempt.completed_at|date:"M d, Y H:i" }}
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <i class="fas fa-stopwatch"></i>
+                            Time spent: {{ attempt.time_spent }} minutes
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="action-buttons">
+                    <a href="{% url 'quiz_detail_results' course_id lesson_id attempt.id %}" 
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-list-alt"></i> View Detailed Results
+                    </a>
+                    
+                    {% if not attempt.passed and attempt.quiz.attempts.count < quiz.max_attempts %}
+                    <a href="{% url 'start_quiz' course_id lesson_id %}" class="btn btn-warning ms-2">
+                        <i class="fas fa-redo"></i> Try Again
+                        ({{ quiz.max_attempts|add:"-1" }} attempts left)
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'lesson_detail' course_id lesson_id %}" class="btn btn-secondary ms-2">
+                        <i class="fas fa-arrow-left"></i> Back to Lesson
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.score-circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 8px solid;
+}
+
+.score-passed {
+    border-color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.score-failed {
+    border-color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.score-text {
+    text-align: center;
+}
+</style>
+{% endblock %}

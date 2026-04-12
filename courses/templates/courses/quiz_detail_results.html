@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Detailed Results: {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-chart-pie"></i>
+                    Detailed Quiz Results: {{ quiz.title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- Summary -->
+                <div class="row mb-4 text-center">
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h5 class="text-primary mb-0">{{ attempt.score|floatformat:0 }}%</h5>
+                            <small>Overall Score</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h5 class="text-success mb-0">
+                                {{ user_answers|length }}
+                            </h5>
+                            <small>Total Questions</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h5 class="text-success mb-0">
+                                {{ user_answers|length }}
+                            </h5>
+                            <small>Questions Answered</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h5 class="{% if attempt.passed %}text-success{% else %}text-danger{% endif %} mb-0">
+                                {% if attempt.passed %}PASSED{% else %}FAILED{% endif %}
+                            </h5>
+                            <small>Final Result</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Questions and Answers -->
+                <h5>Question Review:</h5>
+                {% for user_answer in user_answers %}
+                <div class="card mb-3 {% if user_answer.is_correct %}border-success{% else %}border-danger{% endif %}">
+                    <div class="card-header {% if user_answer.is_correct %}bg-success text-white{% else %}bg-danger text-white{% endif %}">
+                        <strong>Question {{ forloop.counter }}:</strong> 
+                        {{ user_answer.question.question_text }}
+                        <span class="float-end">
+                            {% if user_answer.is_correct %}
+                                <i class="fas fa-check"></i> Correct (+{{ user_answer.question.points }})
+                            {% else %}
+                                <i class="fas fa-times"></i> Incorrect
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <!-- User's Answer -->
+                        <div class="mb-3">
+                            <strong>Your Answer:</strong>
+                            {% if user_answer.question.question_type == 'multiple_choice' or user_answer.question.question_type == 'true_false' %}
+                                <span class="ms-2 {% if user_answer.is_correct %}text-success{% else %}text-danger{% endif %}">
+                                    {{ user_answer.selected_choice.choice_text }}
+                                </span>
+                            {% else %}
+                                <span class="ms-2 {% if user_answer.is_correct %}text-success{% else %}text-danger{% endif %}">
+                                    {{ user_answer.text_answer }}
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Correct Answer (if wrong) -->
+                        {% if not user_answer.is_correct %}
+                        <div class="alert alert-success">
+                            <strong>Correct Answer:</strong>
+                            {% with correct_choice=user_answer.question.choices.all|first %}
+                                {% if correct_choice %}
+                                    {{ correct_choice.choice_text }}
+                                {% else %}
+                                    Not specified
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Explanation could be added here -->
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Navigation -->
+                <div class="text-center mt-4">
+                    <a href="{% url 'lesson_detail' course_id lesson_id %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Lesson
+                    </a>
+                    <a href="{% url 'quiz_results' course_id lesson_id attempt.id %}" class="btn btn-secondary ms-2">
+                        <i class="fas fa-chart-bar"></i> Back to Summary
+                    </a>
+                    
+                    {% if not attempt.passed and attempt.quiz.attempts.count < quiz.max_attempts %}
+                    <a href="{% url 'start_quiz' course_id lesson_id %}" class="btn btn-warning ms-2">
+                        <i class="fas fa-redo"></i> Try Again
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

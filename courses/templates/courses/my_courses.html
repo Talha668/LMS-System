@@ -1,0 +1,58 @@
+<!-- courses/my_courses.html -->
+{% extends 'base.html' %}
+
+{% block title %}My Courses - LMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>My Courses</h1>
+        
+        {% if enrollments %}
+        <div class="row">
+            {% for enrollment in enrollments %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    {% if enrollment.course.thumbnail %}
+                    <img src="{{ enrollment.course.thumbnail.url }}" class="card-img-top" alt="{{ enrollment.course.title }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <span class="text-white">No Image</span>
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ enrollment.course.title }}</h5>
+                        <p class="card-text">{{ enrollment.course.description|truncatewords:20 }}</p>
+                        
+                        {% if enrollment.completed %}
+                        <div class="alert alert-success py-1">
+                            <i class="fas fa-trophy"></i> Completed
+                        </div>
+                        {% else %}
+                        <div class="progress mb-2">
+                            <div class="progress-bar" role="progressbar" style="width: {{ enrollment.progress_percentage }}%">
+                                {{ enrollment.progress_percentage }}%
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            {{ enrollment.completed_lessons_count }}/{{ enrollment.total_lessons_count }} lessons
+                        </small>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <a href="{% url 'course_dashboard' enrollment.course.id %}" class="btn btn-primary">
+                            {% if enrollment.completed %}Review Course{% else %}Continue Learning{% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <p>You are not enrolled in any courses yet. <a href="{% url 'course_list' %}">Browse available courses</a></p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
