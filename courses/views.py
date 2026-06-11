@@ -14,7 +14,6 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 from django.http import HttpResponse
 import os
-from datetime import datetime
 
 
 
