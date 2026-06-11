@@ -17,7 +17,15 @@ from django.http import HttpResponse
 import os
 from datetime import datetime
 
-# Create your views here.
+
+
+
+
+
+
+
+
+
 
 def course_list(request):
     courses = Course.objects.filter(is_published=True)
