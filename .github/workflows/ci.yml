@@ -32,6 +32,10 @@ jobs:
     - name: Check code formatting with black
       run: |
         black --check . || echo "Run 'black .' to fix formatting"
+    
+    - name: Format code with Black
+      run: |
+        balck .    
 
     - name: Link code with Flake8
       run: |
