@@ -91,6 +91,6 @@ class UserModelTest(TestCase):
         self.assertTrue(admin.is_superuser)
 
     # Test that will intentionally fail to check the pipeline
-    def test_intentional_failure(self):
-        "This test will fail intentionally"
-        self.assertEqual(1, 2)    # This will fail        
+    # def test_intentional_failure(self):
+        # "This test will fail intentionally"
+        # self.assertEqual(1, 2)    # This will fail       
