@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Course, Enrollment, Module, Lesson, QuizAttempt, Quiz, UserAnswer, Question, Choice, Certificate,DiscussionReply, DiscussionThread
+from .models import Course, Enrollment, Lesson, QuizAttempt, Quiz, UserAnswer, Question, Choice, Certificate,DiscussionReply, DiscussionThread
 from .forms import CourseForm, LessonForm, QuizAttemptForm, UserAnswerForm, DiscussionThreadForm, DiscussionReplyForm
 from .models import LessonProgress
 from django.utils import timezone
@@ -125,7 +125,7 @@ def mark_lesson_completed(request, course_id, lesson_id):
         lesson_progress.completed = True
         lesson_progress.completed_at = timezone.now()
         lesson_progress.save()
-        messages.success(request, f"Lesson marked as complete")
+        messages.success(request, "Lesson marked as complete")
 
     return redirect('lesson_detail', course_id=course_id, lesson_id=lesson_id)
 
@@ -280,7 +280,7 @@ def finish_quiz(request, course_id, lesson_id, attempt_id):
                 lesson_progress.completed = True
                 lesson_progress.completed_at = timezone.now()
                 lesson_progress.save()
-                messages.success(request, f"Quiz passes! Lesson marked as completed.")
+                messages.success(request, "Quiz passes! Lesson marked as completed.")
 
     return render(request, 'courses/quiz_results.html', {
         'attempt': attempt,
