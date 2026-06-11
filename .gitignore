@@ -117,3 +117,4 @@ build/
 # Additional
 db.sqlite3
 tree.txt
+.env
