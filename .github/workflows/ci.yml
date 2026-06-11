@@ -35,7 +35,7 @@ jobs:
     
     - name: Format code with Black
       run: |
-        balck .    
+        black .    
 
     - name: Link code with Flake8
       run: |
