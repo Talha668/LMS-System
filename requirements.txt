@@ -1,0 +1,7 @@
+django
+pillow
+python-dotenv
+gunicorn
+whitenoise
+psycopg2-binary
+django-environ

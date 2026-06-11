@@ -1,0 +1,49 @@
+name: CI - Test and Quality
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+        
+    - name: Install dependecies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8 black
+        
+    - name: run migrations (using SQlite)
+      run: |
+        python manage.py migrate
+    
+    - name: Check code formatting with black
+      run: |
+        black --check . || echo "Run 'black .' to fix formatting"
+
+    - name: Link code with Flake8
+      run: |
+        flake8 . --count --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Run Django tests
+      env:
+        SECRET_KEY: "test-secret-key-for-ci-only"
+        DEBUG: "False"
+      run: |
+        python manage.py test --verbosity=2
+        
+    - name: Check status file
+      run: |
+        python manage.py collectstatic --noinput --clear

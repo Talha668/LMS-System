@@ -1,0 +1,119 @@
+# Django
+*.log
+*.pot
+*.pyc
+*.pyo
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# If using PostgreSQL/MySQL locally
+*.dump
+*.sql
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+virtualenv/
+
+# Django static files (collected)
+staticfiles/
+static/admin/
+static/rest_framework/
+
+# Media files (user uploads - keep directory but not contents)
+media/*
+!media/.gitkeep
+!media/course_thumbnails/
+media/course_thumbnails/*
+!media/course_thumbnails/.gitkeep
+
+# IDE - VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+
+# IDE - PyCharm/IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+*.xml
+
+# IDE - Sublime
+*.sublime-project
+*.sublime-workspace
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+*.stackdump
+Desktop.ini
+
+# Linux
+*~
+.nfs*
+
+# Backup files
+*.bak
+*.swp
+*.swo
+*~
+
+# Coverage/Testing
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.tox/
+
+# Django migrations (keep files, ignore compiled)
+**/migrations/__pycache__/
+**/migrations/*.pyc
+# Uncomment next line if you want to ignore all migrations (not recommended)
+# **/migrations/*.py
+# !**/migrations/__init__.py
+
+# Node (if using npm/yarn for frontend)
+node_modules/
+package-lock.json
+yarn.lock
+npm-debug.log*
+
+# Compiled Python
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.manifest
+*.spec
+
+# SSL Certificates (local development)
+*.pem
+*.key
+*.crt
+
+# Additional
+db.sqlite3
+tree.txt
