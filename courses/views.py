@@ -1,19 +1,15 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Course, Enrollment, Lesson, QuizAttempt, Quiz, UserAnswer, Question, Choice, Certificate,DiscussionReply, DiscussionThread
-from .forms import CourseForm, LessonForm, QuizAttemptForm, UserAnswerForm, DiscussionThreadForm, DiscussionReplyForm
-from .models import LessonProgress
+from .models import Course, Enrollment, Lesson, QuizAttempt, Quiz, UserAnswer, Certificate, DiscussionReply, DiscussionThread, LessonProgress
+from .forms import UserAnswerForm, DiscussionThreadForm, DiscussionReplyForm
 from django.utils import timezone
-from django.db.models import Count, Sum
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from django.http import HttpResponse
-import os
 
 
 
@@ -211,8 +207,43 @@ def process_quiz_answer(attempt, question, cleaned_data):
             is_correct = user_answer.text_answer.lower().strip() == correct_answer.choice_text.lower().strip()
 
     user_answer.is_correct = is_correct
-    user_answer.save()                
-        
+    user_answer.save()  
+
+
+def get_quiz_context(attempt, quiz, current_question, course_id, lesson_id):
+    """Helper function to prepare quiz context"""
+    form = UserAnswerForm(question=current_question)
+    questions_count = quiz.questions.count()
+
+    return {
+        'attempt': attempt,
+        'quiz': quiz,
+        'current_question': current_question,
+        'form': form,
+        'progress': ((attempt.current_question) / questions_count) * 100,
+        'course_id': course_id,
+        'lesson_id': lesson_id,
+    }        
+
+
+def handle_quiz_subbmission(request, attempt, questions, course_id, lesson_id):
+    """Helper function to handle quiz form submission"""
+    question = questions[attempt.cuurent_question]
+    form = UserAnswerForm(request.POST, question=question)
+
+    if form.is_valid():
+        # Use helper function to process logic
+        process_quiz_answer(attempt, question, form.cleaned_data)
+
+        # Move to next question or finish quiz
+        attempt.current_question += 1
+        if attempt.current_question >= questions.count():
+            return redirect('finish_quiz', course_id=course_id, lesson_id=lesson_id, attempt_id=attempt.id)
+        else:
+            attempt.save()
+
+    return None       
+
 
 @login_required
 def take_quiz(request, course_id, lesson_id, attempt_id):
@@ -228,41 +259,21 @@ def take_quiz(request, course_id, lesson_id, attempt_id):
         
         # Handle form submission
         if request.method == 'POST':
-            question = questions[attempt.current_question]
-            form = UserAnswerForm(request.POST, question=question)
-
-            if form.is_valid():
-                # Use helper function to process logic
-                process_quiz_answer(attempt, question, form.cleaned_data)
-
-                # Move to next question or finish quiz
-                attempt.current_question += 1
-                if attempt.current_question >= questions.count():
-                    return redirect('finish_quiz', course_id=course_id, lesson_detail=lesson_detail, attempt_id=attempt_id)
-                else:
-                    attempt.save()
+            result = handle_quiz_subbmission(request, attempt, questions, course_id, lesson_id)
+            if result:
+                return result
 
         # Prepare data for rendering
         if attempt.current_question < questions.count():
             current_question = questions[attempt.current_question]
-            form = UserAnswerForm(question=current_question)
-
-            context = {
-                'attempt': attempt,
-                'quiz': quiz,
-                'current_question': current_question,
-                'form': form,
-                'progress': ((attempt.current_question) / questions.count()) * 100,
-                'course_id': course_id,
-                'lesson_id': lesson_id,
-            }           
+            context = get_quiz_context(attempt, quiz, current_question, course_id, lesson_id)         
             return render(request, 'courses/take_quiz.html', context)
         else:
             # If user get here without finish redirect to finish
             return redirect('finish_quiz', course_id=course_id, lesson_id=lesson_id, attempt_id=attempt.id)
 
     except Exception as e:
-        print(f"ERROR in take3_quiz: {e}")
+        print(f"ERROR in take_quiz: {e}")
         import traceback
         print(traceback.format_exc())
         messages.error(request, f"Error loading quiz: {e}")
@@ -335,7 +346,7 @@ def generate_certificate(request, course_id):
 
     # Generate PDF
     response = HttpResponse(content_type='application/pdf')
-    filename = f"certificate_{course.title.replace('', '_')}_{request.user.username}.pdf"
+    filename = f"certificate_{course.title.replace(' ', '_')}_{request.user.username}.pdf"
     response['Content-Disposition'] = f'attachement; filename="{filename}"'
 
     # Create PDf
@@ -358,7 +369,7 @@ def generate_certificate(request, course_id):
         parent=styles['Normal'],
         fontSize=14,
         spaceAfter=12,
-        alingment=1
+        alignment=1
     )
 
     # Certificate content
@@ -464,12 +475,12 @@ def discussion_thread(request, course_id, thread_id):
             messages.success(request, 'Reply posted successfully')
             return redirect('discussion_thread', course_id=course_id, thread_id=thread_id)
         
-        return render(request, 'courses/discussion_thread.html', {
+    return render(request, 'courses/discussion_thread.html', {
             'course': course,
             'thread': thread,
             'replies': thread.replies.all(),
             'reply_form': reply_form,
-        })
+    })
     
 
 @login_required
