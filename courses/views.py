@@ -182,10 +182,10 @@ def process_quiz_answer(attempt, question, cleaned_data):
     Save or updates the user answer and determines if it is correct or not
     """
     # Get or create the answer record
-    user_answer, created = UserAnswer.objects.create(
+    user_answer, created = UserAnswer.objects.get_or_create(
         attempt=attempt,
         question=question,
-        default=cleaned_data
+        defaults=cleaned_data
     )
 
     # If it already exists update the fields
@@ -226,9 +226,9 @@ def get_quiz_context(attempt, quiz, current_question, course_id, lesson_id):
     }        
 
 
-def handle_quiz_subbmission(request, attempt, questions, course_id, lesson_id):
+def handle_quiz_submission(request, attempt, questions, course_id, lesson_id):
     """Helper function to handle quiz form submission"""
-    question = questions[attempt.cuurent_question]
+    question = questions[attempt.current_question]
     form = UserAnswerForm(request.POST, question=question)
 
     if form.is_valid():
@@ -259,7 +259,7 @@ def take_quiz(request, course_id, lesson_id, attempt_id):
         
         # Handle form submission
         if request.method == 'POST':
-            result = handle_quiz_subbmission(request, attempt, questions, course_id, lesson_id)
+            result = handle_quiz_submission(request, attempt, questions, course_id, lesson_id)
             if result:
                 return result
 
@@ -347,7 +347,7 @@ def generate_certificate(request, course_id):
     # Generate PDF
     response = HttpResponse(content_type='application/pdf')
     filename = f"certificate_{course.title.replace(' ', '_')}_{request.user.username}.pdf"
-    response['Content-Disposition'] = f'attachement; filename="{filename}"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
     # Create PDf
     doc = SimpleDocTemplate(response, pagesize=A4)

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Course, Lesson, Module, Quiz, Question, QuizAttempt, Choice, UserAnswer, DiscussionThread, DiscussionReply
+from .models import Course, Lesson, QuizAttempt, UserAnswer, DiscussionThread, DiscussionReply
 
 
 class CourseForm(forms.ModelForm):
