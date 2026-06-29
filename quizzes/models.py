@@ -2,7 +2,11 @@ from django.db import models
 from courses.models import Lesson
 from django.contrib.auth.models import User
 
-# Create your models here.
+
+
+
+
+
 
 class Quiz(models.Model):
     lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE, related_name='quiz')

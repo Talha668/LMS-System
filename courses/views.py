@@ -101,7 +101,7 @@ def lesson_detail(request, course_id, lesson_id):
         lesson_progress.completed = True
         lesson_progress.completed_at = timezone.now()
         lesson_progress.save()
-        messages.success(request, f"Lesson marked as completed!")
+        messages.success(request, "Lesson marked as completed!")
 
 
     return render(request, 'courses/lesson_detail.html', {
@@ -181,6 +181,38 @@ def start_quiz(request, course_id, lesson_id):
         return redirect('lesson_detail', course_id=course_id, lesson_id=lesson_id)
 
 
+def process_quiz_answer(attempt, question, cleaned_data):
+    """
+    Save or updates the user answer and determines if it is correct or not
+    """
+    # Get or create the answer record
+    user_answer, created = UserAnswer.objects.create(
+        attempt=attempt,
+        question=question,
+        default=cleaned_data
+    )
+
+    # If it already exists update the fields
+    if not created:
+        user_answer.selected_choice = cleaned_data.get('selected_choice')
+        user_answer.text_answer = cleaned_data.get('text_answer')
+        user_answer.save()
+
+    # Determine correctness based on question type
+    is_correct = False
+
+    if question.question_type in ['multiple_choice', 'true_false']:
+        if user_answer.selected_choice:
+            is_correct = user_answer.selected_choice.is_correct
+    
+    elif question.question_type == 'short_answer':
+        correct_answer = question.choices.filter(is_correct=True).first()
+        if correct_answer:
+            is_correct = user_answer.text_answer.lower().strip() == correct_answer.choice_text.lower().strip()
+
+    user_answer.is_correct = is_correct
+    user_answer.save()                
+        
 
 @login_required
 def take_quiz(request, course_id, lesson_id, attempt_id):
@@ -200,37 +232,17 @@ def take_quiz(request, course_id, lesson_id, attempt_id):
             form = UserAnswerForm(request.POST, question=question)
 
             if form.is_valid():
-                user_answer, created = UserAnswer.objects.get_or_create(
-                    attempt = attempt,
-                    question = question,
-                    defaults = form.cleaned_data
-                )
-
-                if not created:
-                    user_answer.selected_choice = form.cleaned_data.get('selected_choice')
-                    user_answer.text_answer = form.cleaned_data.get('text_answer')
-                    user_answer.save()
-
-                # Check if the answer is correct
-                if question.question_type in ['multiple_choice', 'true_false']:
-                    user_answer.is_correct = user_answer.selected_choice.is_correct if user_answer.selected_choice else False
-                elif question.question_type == 'short_answer':
-                    correct_answer = question.choices.filter(is_correct=True).first()
-                    if correct_answer and user_answer.text_answer.lower().strip() == correct_answer.choice_text.lower().strip():
-                        user_answer.is_correct = True
-                    else:
-                        user_answer.is_correct = False
-
-                user_answer.save()
+                # Use helper function to process logic
+                process_quiz_answer(attempt, question, form.cleaned_data)
 
                 # Move to next question or finish quiz
                 attempt.current_question += 1
                 if attempt.current_question >= questions.count():
-                    return redirect('finish_quiz', course_id=course_id, lesson_id=lesson_id, attempt_id=attempt.id)
+                    return redirect('finish_quiz', course_id=course_id, lesson_detail=lesson_detail, attempt_id=attempt_id)
                 else:
                     attempt.save()
 
-        # Get current questions
+        # Prepare data for rendering
         if attempt.current_question < questions.count():
             current_question = questions[attempt.current_question]
             form = UserAnswerForm(question=current_question)
@@ -243,13 +255,14 @@ def take_quiz(request, course_id, lesson_id, attempt_id):
                 'progress': ((attempt.current_question) / questions.count()) * 100,
                 'course_id': course_id,
                 'lesson_id': lesson_id,
-            }
+            }           
             return render(request, 'courses/take_quiz.html', context)
         else:
+            # If user get here without finish redirect to finish
             return redirect('finish_quiz', course_id=course_id, lesson_id=lesson_id, attempt_id=attempt.id)
-    
+
     except Exception as e:
-        print(f"ERROR in take_quiz: {e}" )
+        print(f"ERROR in take3_quiz: {e}")
         import traceback
         print(traceback.format_exc())
         messages.error(request, f"Error loading quiz: {e}")
