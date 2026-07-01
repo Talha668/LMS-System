@@ -1,5 +1,5 @@
 from django import forms
-from .models import Course, Lesson, QuizAttempt, UserAnswer, DiscussionThread, DiscussionReply, Rating
+from .models import Course, Lesson, QuizAttempt, UserAnswer, DiscussionThread, DiscussionReply, Rating, Category
 
 
 class CourseForm(forms.ModelForm):
@@ -119,3 +119,17 @@ class UserAnswerForm(forms.Form):
                     widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
                     required=True
                 )    
+
+
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['name', 'slug', 'description', 'icon', 'parent', 'order']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'slug': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'icon': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'fas fa-code'}),
+            'parent': forms.Select(attrs={'class': 'form-control'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control'}),
+        }

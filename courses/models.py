@@ -335,7 +335,7 @@ class Rating(models.Model):
         self.course.update_rating()    
 
 class Category(models.Model):
-    """Course categiories for better organization"""
+    """Course categories for better organization"""
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True)
     description = models.TextField(blank=True)
@@ -347,7 +347,7 @@ class Category(models.Model):
     class Meta:
         ordering = ['order', 'name']
         verbose_name_plural = 'Categories'
-        
+
         def __str__(self):
             return self.name
         
