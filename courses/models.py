@@ -357,3 +357,92 @@ class Category(models.Model):
         def course_count(self):
             return self.courses.count()
         
+        
+class LearningPath(models.Model):
+    """A structured learning journey with multiple courses"""
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, unique=True)
+    description = models.TextField()
+    image = models.ImageField(upload_to='mearning_fields/', null=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    level = models.CharField(max_length=20, choices=[
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advances', 'Advanced'),
+    ], defailt='beginner')
+    extimated_duration = models.PositiveBigIntegerField(help_text='Estimated duartion in hours')
+    is_publised = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+        def __str__(self):
+            return self.title
+        
+        def total_courses(self):
+            return self.path_courses.count()
+        
+        def total_enrollment(self):
+            return LearningPathEnrollment.objects.filter(path=self).count()
+        
+        def completion_rate(self):
+            enrollments = LearningPathEnrollment.objects.filter(path=self)
+            if not enrollments.exists():
+                return 0
+            completed = enrollments.filter(completed=True).count()
+            return int((completed / enrollments.count()) * 100)
+        
+
+class LearningPathCourse(models.Model):
+    """Link courses to learning path in order"""
+    path = models.ForeignKey(LearningPath, on_delete=models.CASCADE, related_name='path_courses')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    order = models.PositiveBigIntegerField(default=0)
+    is_required = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['order']
+        uniques_together = ['path', 'course']
+
+    def __str__(self):
+        return f"{self.path.title} - {self.course.title}"
+
+
+class LearningPathEnrollment(models.Model):
+    """Track user enrollment in learning path"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='path_enrollments')
+    path = models.ForeignKey(LearningPath, on_delete=models.CASCADE, related_name='enrollments')
+    enrollment_at = models.DateTimeField(auto_now_add=True)
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    progress = models.FloatField(default=0.0)   # 0-100
+
+    class Meta:
+        uniques_together = ['user', 'path']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.path.title}"
+
+    def calculate_progress(self):
+        """Calculate progress based on completed courses in path"""
+        total_courses = self.path.path_courses.count()
+        if total_courses == 0:
+            return 0
+        
+        completed_courses = self.user.enrollments.filter(
+            course__in=self.path.path_courses.values_list('course', flat=True),
+            completed=True
+        ).count()
+
+        progress = (completed_courses / total_courses) * 100
+        self.progress = progress
+        self.save()
+
+        if progress == 100 and not self.completed:
+            self.completed = True
+            self.completed_at = timezone.now()
+            self.save()
+
+        return progress        
