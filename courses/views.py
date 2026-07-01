@@ -1,15 +1,19 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Course, Enrollment, Lesson, QuizAttempt, Quiz, UserAnswer, Certificate, DiscussionReply, DiscussionThread, LessonProgress
-from .forms import UserAnswerForm, DiscussionThreadForm, DiscussionReplyForm
+from .models import Course, Enrollment, Lesson, QuizAttempt, Quiz, UserAnswer, Certificate, DiscussionReply, DiscussionThread, LessonProgress, Rating
+from .forms import UserAnswerForm, DiscussionThreadForm, DiscussionReplyForm, RatingForm
 from django.utils import timezone
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.units import inch
+from reportlab.lib.units import inch 
 from reportlab.lib import colors
 from django.http import HttpResponse
+from django.db.models import Avg, Count, Q
+from django.core.mail import send_mail
+from django.conf import settings
+
 
 
 
@@ -22,20 +26,81 @@ from django.http import HttpResponse
 
 
 def course_list(request):
+    # Course list with search and filter
     courses = Course.objects.filter(is_published=True)
-    return render(request, 'courses/course_list.html', {'courses': courses})
+
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        courses = courses.filter(
+            models.Q(title__icontains=search_query) |
+            models.Q(description__icontains=search_query)
+        )
+
+    # Filter by category
+    category = request.GET.get('category', '')
+    if category:
+        courses = courses.filter(category=category)
+
+    # Filter by level
+    level = request.Get.get('level', '')
+    if level:
+        courses = courses.filter(level=level)
+
+    # Sort options
+    sort = request.GET.get('sort', 'newest')
+    if sort == 'newest':
+        courses = courses.order_by('-created_at')
+    elif sort == 'popular':
+        courses = courses.annotate(enrollment_count=Count('enrollments')).order_by('-enrollment_count')
+    elif sort == 'rating':
+        courses = courses.order_by('-average_rating')
+    elif sort == 'price_low':
+        courses = courses.order_by('price')
+    elif sort == 'price_high':
+        courses = courses.order_by('-price')
+
+    # Get categories for filter
+    categories = courses.objects.filter(is_published=True).value_list('category', flat=True).distinct()
+    categories = [cat for cat in categories if cat]
+    context = {
+        'courses': courses,
+        'search_query': search_query,
+        'category': category,
+        'level': level,
+        'sort': sort,
+        'categories': categories,
+    }          
+    return render(request, 'courses/course_list.html', context)
 
 
 def course_detail(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     is_enrolled = False
+    is_instructor = False
+
     if request.user.is_authenticated:
         is_enrolled = Enrollment.objects.filter(student=request.user, course=course).exists()
+        is_instructor = request.user == course.instructor
 
-    return render(request,'courses/course_detail.html', {
+    # get rating
+    ratings = course.ratings.all()
+
+    # Rating form
+    rating_form = RatingForm()
+    user_rating = None
+    if request.user.is_authenticated:
+        user_rating = Rating.objects.filter(course=course, user=request.user).first()
+
+    context = {
         'course': course,
-        'is_enrolled': is_enrolled
-    })
+        'is_enrolled': is_enrolled,
+        'is_instructor': is_instructor,
+        'ratings': ratings,
+        'rating_form': rating_form,
+        'user_rating': user_rating,
+    }    
+    return render(request,'courses/course_detail.html', context)
 
 
 @login_required
@@ -48,6 +113,22 @@ def enroll_course(request, course_id):
     else:
         Enrollment.objects.create(student=request.user, course=course)
         messages.success(request, f'Successfully enrolled in {course.title}!')
+
+        # Send enrollment email
+        try:
+            send_mail(
+                f'Enrollment in {course.title}',
+                f'Dear {request.user.get_full_name()},\n\n'
+                f'you have successfully enrolled in "{course.title}".\n\n'
+                f'Start learning now!\n\n'
+                f'Best ragards,\n'
+                f'The LMS Team',
+                settings.DEFAULT_FROM_EMAIL,
+                [request.user.email],
+                fail_silently=True,
+            )
+        except:
+            pass    
 
     return redirect('course_detail', course_id=course_id)
 
@@ -66,16 +147,50 @@ def course_dashboard(request, course_id):
     # Update course completion status
     if enrollment.progress_percentage() == 100 and not enrollment.completed:
         enrollment.mark_completed()  # This now generate certificate too
-        messages.success(request, f"Congragulation! You've completed {course.title}! 🎉")
+        messages.success(request, f"Congratulation! You've completed {course.title}! 🎉")
+
+        # Send completion email
+        try:
+            send_mail(
+                f'Course completed: {course.title}',
+                f'Dear {request.user.get_full_name()},\n\n'
+                f'Congratulations on completing "{course.title}"!\n\n'
+                f'Your certificate is now available on your profile.\n\n'
+                f'Keep learning!\n\n'
+                f'Best ragards,\n'
+                f'The LMS Team',
+                settings.DEFAULT_FROM_EMAIL,
+                [request.user.email],
+                fail_silently=True,
+            )
+        except:
+            pass
 
     # To check if the certificate even exists
     has_certificate = Certificate.objects.filter(student=request.user, course=course).exists()    
 
-    return render(request, 'courses/course_dashboard.html', {
+    # get next lesson
+    next_lesson = None
+    completed_lessons = LessonProgress.objects.filter(
+        student=request.user,
+        lesson__module__course=course,
+        completed=True
+    ).values_list('lesson_id', flat=True)
+
+    all_lessons = Lesson.objects.filter(module__course=course).order_by('order')
+    for lesson in all_lessons:
+        if lesson.id not in completed_lessons:
+            if lesson.get_prerequisites_completed(request.user):
+                next_lesson = lesson
+                break
+
+    context = {
         'course': course,
         'enrollment': enrollment,
-        'has_certificate': has_certificate
-    })       
+        'has_certificate': has_certificate,
+        'next_lesson': next_lesson,
+    }        
+    return render(request, 'courses/course_dashboard.html', context)       
 
 
 @login_required
@@ -88,24 +203,26 @@ def lesson_detail(request, course_id, lesson_id):
         messages.error(request, 'You need to enroll in this course first')
         return redirect('course_detail', course_id=course_id)
     
+    # Check prerequisites
+    if not lesson.get_prerequisites_completed(request.user):
+        messages.warning(request, 'You need to complete the prerequisites for this lesson first.')
+        return redirect('course_dashboad', course_id=course_id)
+    
     # Get or create lesson progress
     lesson_progress, created = LessonProgress.objects.get_or_create(student=request.user, lesson=lesson)
 
+    # Get next or previous lessons
+    next_lesson = course.get_next_lesson(lesson)
+    previous_lesson = course.get_prvious_lesson(lesson)
 
-    # Mark as completed when user visits the given course or you can add a complete button
-    if not lesson_progress.completed:
-        lesson_progress.completed = True
-        lesson_progress.completed_at = timezone.now()
-        lesson_progress.save()
-        messages.success(request, "Lesson marked as completed!")
-
-
-    return render(request, 'courses/lesson_detail.html', {
-        'lesson' : lesson,
-        'course' : course,
-        'lesson_progress' : lesson_progress
-
-    })
+    context = {
+        'lesson': lesson,
+        'course': course,
+        'lesson_progress': lesson_progress,
+        'next_lesson': next_lesson,
+        'previous_lesson': previous_lesson,
+    }
+    return render(request, 'courses/lesson_detail.html', context)
 
 
 @login_required
@@ -502,3 +619,31 @@ def mark_as_answer(request, course_id, thread_id, reply_id):
     messages.success(request, f'Reply {action} succssfully!')
 
     return redirect('discussion_thread', course_id=course_id, thread_id=thread_id)
+
+
+@login_required
+def add_rating(request, course_id):
+    """Add or update course rating"""
+    course = get_object_or_404(Course, id=course_id)
+
+    if request.method == 'POST':
+        form = RatingForm(request.POST)
+        if form.is_valid():
+            rating, created = Rating.objects.get_or_create(
+                course=course,
+                user=request.user,
+                defaults={
+                    'rating': form.cleaned_data['rating'],
+                    'review': form.cleaned_data['review']
+                }
+            )
+            if not created:
+                rating.rating = form.cleaned_data['rating']
+                rating.review = form.cleaned_data['review']
+                rating.save()
+
+            messages.success(request, 'Thank You for rating')
+        else:
+            messages.error(request, 'Invalid rating form')
+
+    return redirect('course_detail', course_id=course_id)                

@@ -1,7 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
+import uuid
 
-# Create your models here.
+
+
+
+
+
 
 class Course(models.Model):
     title = models.CharField(max_length=200)
@@ -13,8 +19,51 @@ class Course(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_published = models.BooleanField(default=False)
 
-    # def __str__(self):
-    #     return self.title
+    # New fields
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, blank=True, null=True, related_name='category')
+    level = models.CharField(max_length=20, choices=[
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advanced', 'Advanced')
+    ], default='beginner')
+    average_rating = models.FloatField(default=0.0)
+    total_reviews = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.title
+    
+    def update_rating(self):
+        """Calculate and update average rating"""
+        from .models import Rating
+        ratings = Rating.objects.filter(course=self)
+        if ratings.exists():
+            self.average_rating = ratings.aggregate(models.Avg('rating'))['rating__avg']
+            self.total_reviews = ratings.count()
+        else:
+            self.average_rating = 0
+            self.total_reviews = 0
+        self.save()
+
+    def get_next_lesson(self, current_lesson):
+        """Get next lesson in the course"""
+        try:
+            return Lesson.objects.filter(
+                module__course=self,
+                order__gt=current_lesson.order
+            ).order_by('order').first()
+        except:
+            return None
+        
+    def get_prvious_lesson(self, current_lesson):
+        """Get previous lesson in the course"""
+        try:
+            return Lesson.objects.filter(
+                module__course=self,
+                order__lt=current_lesson.order
+            ).order_by('order').first()
+        except:
+            return None
+
     
 class Enrollment(models.Model):
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='enrollments')
@@ -75,6 +124,9 @@ class Module(models.Model):
 
     def __str__(self):
         return f"{self.course.title} - {self.title}"
+    
+    def lesson_count(self):
+        return self.lessons.count()
         
 
 class Lesson(models.Model):
@@ -85,12 +137,39 @@ class Lesson(models.Model):
     duration = models.PositiveIntegerField(help_text='Duration in minutes')
     order = models.PositiveIntegerField(default=0)
 
+    prerequisites = models.ManyToManyField(
+        'self',
+        symmetrical=False,
+        blank=True,
+        related_name='dependent_lesson',
+        help_text="Lessons that must be completed before this one"
+    )
+
     class Meta:
         ordering = ['order']
 
     def __str__(self):
         return self.title    
 
+    def get_prerequisites_completed(self, user):
+        """Check if all prerequisites are completed by the user"""
+        if not self.prerequisites.exists():
+            return True
+        return all(
+            LessonProgress.objects.filter(
+                student=user,
+                lesson=prereq,
+                completed=True
+            ).exists()
+            for prereq in self.prerequisites.all()
+        )
+    
+    def get_unlocked_status(self, user):
+        """Get unlock status for this lesson"""
+        if not user.is_authenticated:
+            return False
+        return self.get_prerequisites_completed(user)
+    
 
 class LessonProgress(models.Model):
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lesson_progress')
@@ -204,8 +283,8 @@ class DiscussionThread(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='discussion_threads')
-    created_at = models.DateField(auto_now_add=True)
-    updated_at = models.DateField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     is_pinned = models.BooleanField(default=False)
     is_locked = models.BooleanField(default=False)
 
@@ -232,4 +311,49 @@ class DiscussionReply(models.Model):
         verbose_name_plural = "Discussion_replies"
 
     def __str__(self):
-        return f"Reply by {self.author.username} on {self.thread.title}"    
+        return f"Reply by {self.author.username} on {self.thread.title}"  
+
+
+class Rating(models.Model):
+    """Course rating and reviews"""
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='ratings')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_ratings')
+    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
+    review = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        uniques_together = ['course', 'user']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.course.title} - {self.rating}★"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.course.update_rating()    
+
+class Category(models.Model):
+    """Course categiories for better organization"""
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    icon = models.CharField(max_length=50, blank=True, help_text="Font awesome icon class")
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subcategories')
+    order = models.PositiveBigIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'name']
+        verbose_name_plural = 'Categories'
+        
+        def __str__(self):
+            return self.name
+        
+        def get_subcategories(self):
+            return self.subcategories.all()
+        
+        def course_count(self):
+            return self.courses.count()
+        

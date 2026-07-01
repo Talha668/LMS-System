@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home - LMS Learning Platform{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Hero Section -->
+    <div class="row align-items-center mb-5 py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
+        <div class="col-lg-8 mx-auto text-center">
+            <h1 class="display-3 fw-bold mb-4">Welcome to LMS Learning Platform</h1>
+            <p class="lead mb-4">Learn new skills, advance your career, and connect with a community of learners.</p>
+            {% if not user.is_authenticated %}
+                <a href="{% url 'register' %}" class="btn btn-light btn-lg me-2">Get Started</a>
+                <a href="{% url 'course_list' %}" class="btn btn-outline-light btn-lg">Browse Courses</a>
+            {% else %}
+                <a href="{% url 'my_courses' %}" class="btn btn-light btn-lg">My Courses</a>
+                <a href="{% url 'course_list' %}" class="btn btn-outline-light btn-lg ms-2">Browse All Courses</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="row text-center mb-5">
+        <div class="col-md-3 col-6">
+            <div class="stat-box">
+                <h2 class="display-4 fw-bold text-primary">{{ total_courses|default:"0" }}</h2>
+                <p class="text-muted">Total Courses</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-box">
+                <h2 class="display-4 fw-bold text-success">{{ total_students|default:"0" }}</h2>
+                <p class="text-muted">Students Enrolled</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-box">
+                <h2 class="display-4 fw-bold text-info">{{ total_instructors|default:"0" }}</h2>
+                <p class="text-muted">Expert Instructors</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-box">
+                <h2 class="display-4 fw-bold text-warning">{{ total_lessons|default:"0" }}</h2>
+                <p class="text-muted">Lessons Available</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Featured Courses -->
+    <h2 class="text-center mb-4">Featured Courses</h2>
+    <div class="row">
+        {% if featured_courses %}
+            {% for course in featured_courses %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm hover-card">
+                        {% if course.thumbnail %}
+                            <img src="{{ course.thumbnail.url }}" class="card-img-top" alt="{{ course.title }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top d-flex align-items-center justify-content-center" style="height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                <h3 class="text-center">{{ course.title|slice:":2"|upper }}</h3>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ course.title }}</h5>
+                            <p class="card-text text-muted">{{ course.description|truncatewords:20 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-primary">{{ course.get_level_display }}</span>
+                                {% if course.average_rating %}
+                                    <span class="text-warning">★ {{ course.average_rating|floatformat:1 }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-user"></i> {{ course.instructor.get_full_name|default:course.instructor.username }}
+                                </small>
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                {% if course.price == 0 %}
+                                    <span class="badge bg-success">Free</span>
+                                {% else %}
+                                    <span class="fw-bold text-primary">${{ course.price }}</span>
+                                {% endif %}
+                                <a href="{% url 'course_detail' course.id %}" class="btn btn-primary btn-sm">View Course</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <h4 class="text-muted">No courses available yet. Check back soon!</h4>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Categories -->
+    {% if categories %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Explore by Category</h2>
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                {% for category in categories %}
+                    <a href="{% url 'course_list' %}?category={{ category }}" class="btn btn-outline-primary">
+                        {{ category }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Why Choose Us -->
+    <div class="row mt-5 py-4">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Why Choose Us</h2>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="feature-icon mb-3">
+                <i class="fas fa-graduation-cap fa-3x text-primary"></i>
+            </div>
+            <h5>Expert Instructors</h5>
+            <p class="text-muted">Learn from industry professionals with real-world experience</p>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="feature-icon mb-3">
+                <i class="fas fa-clock fa-3x text-success"></i>
+            </div>
+            <h5>Learn at Your Pace</h5>
+            <p class="text-muted">Access content anytime, anywhere with self-paced learning</p>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="feature-icon mb-3">
+                <i class="fas fa-certificate fa-3x text-info"></i>
+            </div>
+            <h5>Earn Certificates</h5>
+            <p class="text-muted">Get recognized for your achievements with verified certificates</p>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="feature-icon mb-3">
+                <i class="fas fa-users fa-3x text-warning"></i>
+            </div>
+            <h5>Community Support</h5>
+            <p class="text-muted">Join a vibrant community of learners and collaborate together</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stat-box {
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        transition: transform 0.3s;
+    }
+    .stat-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .hover-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .feature-icon {
+        transition: transform 0.3s;
+    }
+    .feature-icon:hover {
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}

@@ -7,3 +7,7 @@ psycopg2-binary
 django-environ
 dj-database-url
 reportlab
+django-crispy-forms
+crispy-bootstrap5
+django-ckeditor
+django-extensions

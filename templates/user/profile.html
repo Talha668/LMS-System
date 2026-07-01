@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile - {{ user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-4">
+            <!-- Profile Card -->
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    {% if profile.profile_picture %}
+                        <img src="{{ profile.profile_picture.url }}" alt="Profile Picture" 
+                             class="rounded-circle img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #667eea;">
+                    {% else %}
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" 
+                             style="width: 150px; height: 150px; font-size: 48px; border: 3px solid #667eea;">
+                            <span>{{ user.get_full_name|slice:":2"|upper }}</span>
+                        </div>
+                    {% endif %}
+                    
+                    <h4>{{ user.get_full_name }}</h4>
+                    <p class="text-muted">@{{ user.username }}</p>
+                    <span class="badge bg-{% if profile.user_type == 'instructor' %}primary{% elif profile.user_type == 'admin' %}danger{% else %}success{% endif %}">
+                        {{ profile.get_user_type_display }}
+                    </span>
+                    
+                    <hr>
+                    
+                    <div class="text-start">
+                        <p><strong><i class="fas fa-envelope"></i> Email:</strong> {{ user.email }}</p>
+                        {% if profile.phone %}
+                            <p><strong><i class="fas fa-phone"></i> Phone:</strong> {{ profile.phone }}</p>
+                        {% endif %}
+                        {% if profile.expertise %}
+                            <p><strong><i class="fas fa-graduation-cap"></i> Expertise:</strong> {{ profile.expertise }}</p>
+                        {% endif %}
+                        {% if profile.bio %}
+                            <p><strong><i class="fas fa-info-circle"></i> Bio:</strong></p>
+                            <p class="text-muted">{{ profile.bio }}</p>
+                        {% endif %}
+                        {% if profile.date_of_birth %}
+                            <p><strong><i class="fas fa-calendar"></i> Date of Birth:</strong> {{ profile.date_of_birth }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <a href="{% url 'profile_edit' %}" class="btn btn-primary w-100 mt-2">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Social Links -->
+            {% if profile.website or profile.twitter or profile.linkedin or profile.github %}
+            <div class="card mt-3 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-share-alt"></i> Social Links</h5>
+                    <div class="d-flex justify-content-around">
+                        {% if profile.website %}
+                            <a href="{{ profile.website }}" target="_blank" class="btn btn-outline-secondary" title="Website">
+                                <i class="fas fa-globe"></i>
+                            </a>
+                        {% endif %}
+                        {% if profile.twitter %}
+                            <a href="{{ profile.twitter }}" target="_blank" class="btn btn-outline-info" title="Twitter">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                        {% endif %}
+                        {% if profile.linkedin %}
+                            <a href="{{ profile.linkedin }}" target="_blank" class="btn btn-outline-primary" title="LinkedIn">
+                                <i class="fab fa-linkedin"></i>
+                            </a>
+                        {% endif %}
+                        {% if profile.github %}
+                            <a href="{{ profile.github }}" target="_blank" class="btn btn-outline-dark" title="GitHub">
+                                <i class="fab fa-github"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Account Info -->
+            <div class="card mt-3 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-info-circle"></i> Account Info</h5>
+                    <p class="small mb-1"><strong>Joined:</strong> {{ user.date_joined|date:"M d, Y" }}</p>
+                    <p class="small mb-1"><strong>Last Login:</strong> {{ user.last_login|date:"M d, Y H:i" }}</p>
+                    <p class="small mb-0"><strong>Email Verified:</strong> 
+                        {% if profile.is_email_verified %}
+                            <span class="text-success"><i class="fas fa-check-circle"></i> Yes</span>
+                        {% else %}
+                            <span class="text-warning"><i class="fas fa-exclamation-circle"></i> No</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <!-- Statistics -->
+            <div class="row">
+                <div class="col-md-3 col-6">
+                    <div class="card shadow-sm text-center stat-card">
+                        <div class="card-body">
+                            <h2 class="text-primary">{{ total_courses }}</h2>
+                            <p class="text-muted small">Enrolled</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card shadow-sm text-center stat-card">
+                        <div class="card-body">
+                            <h2 class="text-success">{{ completed_courses }}</h2>
+                            <p class="text-muted small">Completed</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card shadow-sm text-center stat-card">
+                        <div class="card-body">
+                            <h2 class="text-info">{{ total_lessons }}</h2>
+                            <p class="text-muted small">Lessons Done</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card shadow-sm text-center stat-card">
+                        <div class="card-body">
+                            <h2 class="text-warning">{{ certificates.count }}</h2>
+                            <p class="text-muted small">Certificates</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header">
+                    <h5><i class="fas fa-clock"></i> Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_activity %}
+                        <ul class="list-unstyled">
+                            {% for activity in recent_activity %}
+                                <li class="mb-2">
+                                    <i class="fas fa-circle text-primary small"></i>
+                                    {{ activity }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No recent activity. Start learning today!</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Certificates -->
+            {% if certificates %}
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header">
+                    <h5><i class="fas fa-certificate"></i> My Certificates</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for certificate in certificates %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6>{{ certificate.course.title }}</h6>
+                                    <p class="text-muted small">
+                                        <i class="fas fa-calendar-alt"></i> {{ certificate.issued_at|date:"M d, Y" }}
+                                    </p>
+                                    <p class="text-muted small">
+                                        <i class="fas fa-id-card"></i> {{ certificate.certificate_id }}
+                                    </p>
+                                    <a href="{% url 'generate_certificate' certificate.course.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-download"></i> Download PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Quick Actions -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header">
+                    <h5><i class="fas fa-rocket"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <a href="{% url 'my_courses' %}" class="btn btn-outline-primary w-100 mb-2">
+                                <i class="fas fa-book"></i> My Courses
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'my_certificates' %}" class="btn btn-outline-success w-100 mb-2">
+                                <i class="fas fa-certificate"></i> Certificates
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'course_list' %}" class="btn btn-outline-info w-100 mb-2">
+                                <i class="fas fa-search"></i> Browse Courses
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stat-card {
+        transition: transform 0.3s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-card h2 {
+        margin-bottom: 0;
+    }
+    .stat-card .card-body {
+        padding: 15px;
+    }
+</style>
+{% endblock %}

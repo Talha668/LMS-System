@@ -1,0 +1,86 @@
+<!-- templates/courses/course_ratings.html -->
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">
+            <i class="fas fa-comments"></i> Course Reviews 
+            <span class="badge bg-secondary">{{ course.total_reviews }}</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Average Rating Summary -->
+        <div class="average-rating mb-4">
+            <div class="rating-number">{{ course.average_rating|floatformat:1 }}</div>
+            <div>
+                <div class="rating-display">
+                    {% for i in "12345"|make_list %}
+                        {% if forloop.counter <= course.average_rating|floatformat:"0"|add:"0" %}
+                            <span class="star filled">★</span>
+                        {% elif forloop.counter <= course.average_rating|add:"0.5"|floatformat:"0"|add:"0" %}
+                            <span class="star half-filled">★</span>
+                        {% else %}
+                            <span class="star">★</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="rating-count">{{ course.total_reviews }} reviews</div>
+            </div>
+        </div>
+        
+        <!-- Rating Distribution -->
+        {% if ratings %}
+            <div class="mb-3">
+                {% for i in "54321"|make_list %}
+                    {% with star_count=i|add:"0" %}
+                        {% with count=ratings|dictsort:"rating"|length %}
+                            {% with percent=count|default:0|floatformat:"0" %}
+                                <div class="rating-bar">
+                                    <span class="rating-label">{{ star_count }}★</span>
+                                    <div class="bar-container">
+                                        <div class="bar-fill" style="width: {{ percent }}%"></div>
+                                    </div>
+                                    <span class="bar-percent">{{ percent }}%</span>
+                                </div>
+                            {% endwith %}
+                        {% endwith %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <hr>
+        
+        <!-- Reviews List -->
+        {% if ratings %}
+            {% for rating in ratings %}
+                <div class="review-item">
+                    <div class="review-header">
+                        <span class="review-user">
+                            <i class="fas fa-user-circle"></i> 
+                            {{ rating.user.get_full_name|default:rating.user.username }}
+                        </span>
+                        <span class="review-date">
+                            <i class="fas fa-calendar-alt"></i> {{ rating.created_at|date:"M d, Y" }}
+                        </span>
+                    </div>
+                    <div class="rating-display rating-display-sm mb-1">
+                        {% for i in "12345"|make_list %}
+                            {% if forloop.counter <= rating.rating %}
+                                <span class="star filled">★</span>
+                            {% else %}
+                                <span class="star">★</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% if rating.review %}
+                        <p class="review-text">{{ rating.review }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-star fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No reviews yet. Be the first to review this course!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>

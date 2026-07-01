@@ -1,5 +1,5 @@
 from django import forms
-from .models import Course, Lesson, QuizAttempt, UserAnswer, DiscussionThread, DiscussionReply
+from .models import Course, Lesson, QuizAttempt, UserAnswer, DiscussionThread, DiscussionReply, Rating
 
 
 class CourseForm(forms.ModelForm):
@@ -64,3 +64,58 @@ class DiscussionReplyForm(forms.ModelForm):
         widgets = {
             'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Write the reoly.....'}),
         }
+
+
+class RatingForm(forms.ModelForm):
+    """Form for rating courses""" 
+    class Meta:
+        model = Rating
+        fields = ['rating', 'review']
+        widgets = {
+            'rating': forms.RadioSelect(choices=[(i, f"{i}★") for i in range(1, 6)]),
+            'review': forms.Textarea(attrs={'rows': 4, 'class': 'form-control', 'placeholder': 'Share your'
+            'thoughts about this course.....'}),
+        }     
+
+
+class DiscussionsThreadForm(forms.ModelForm):
+    """forms for creating discussion threads"""
+    class Meta:
+        model = DiscussionThread
+        fields = ['title', 'content']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'content': forms.Textarea(attrs={'rows': 5, 'class': 'form-control'}),
+        }
+
+
+class DiscussionReplyForm(forms.ModelForm):
+    """Form for replying to discussions"""
+    class Meta:
+        model = DiscussionReply
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placehoder': 'Write your'
+            'reply....'}),
+        }
+
+
+class UserAnswerForm(forms.Form):
+    """Form for quiz answers"""
+    def __init__(self, *args, **Kwargs):
+        question = Kwargs.pop('question', None)
+        super().__init__(*args, **Kwargs)
+
+        if question:
+            if question.question_type in ['multiple_choice', 'true_false']:
+                choices = [(choice.id, choice.choice_text) for choice in question.choices.all()]
+                self.fields['selected_choice'] = forms.ChoiceField(
+                    choices=choices,
+                    widget=forms.RadioSelect,
+                    required=True
+                )
+            elif question.question_type == 'short_answer':
+                self.fields['text_answer'] = forms.CharField(
+                    widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+                    required=True
+                )    

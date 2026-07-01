@@ -43,7 +43,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'courses',
     'users',
-    'discussions',  
+    'discussions', 
+    'crispy_forms',
+    'crispy_bootstrap5',
+    'ckeditor',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
@@ -62,16 +66,14 @@ ROOT_URLCONF = 'lms_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            BASE_DIR / 'templates',
-            BASE_DIR.parent / 'templates',
-        ],
+        'DIRS':[BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'courses.context_processors.notification_count',
             ],
         },
     },
@@ -157,3 +159,36 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 SATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Crispy forms
+CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
+CRISPY_TEMPLATE_PACK = 'bootstrap5'
+
+#CKEditor configuration
+CKEDITOR_UPLOAD_PATH = "uploads/"
+CKEDITOR_CONFIG = {
+    'default': {
+        'toolbar': 'full',
+        'height': 300,
+        'width': '100%',
+        'removePlugins': 'stylesheetparser',
+        'alliowContent': True,
+        'extraPlugins': ','.join([
+            'codesnippet',
+            'widget',
+            'lineutils',
+        ]), 
+    },
+}
+
+# Email settings
+EMAIL_BACKEND = 'djnago.core.mail.backends.console.EmailBackend'
+
+
+# Cache settings
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backend.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}

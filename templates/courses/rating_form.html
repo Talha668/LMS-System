@@ -1,0 +1,70 @@
+<!-- templates/courses/rating_form.html -->
+<div class="card mt-4 shadow-sm">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="fas fa-star text-warning"></i> Rate this Course</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{% url 'add_rating' course.id %}" id="ratingForm">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">Your Rating</label>
+                <div class="rating-stars">
+                    <input type="radio" name="rating" value="5" id="star5" 
+                           {% if user_rating and user_rating.rating == 5 %}checked{% endif %}>
+                    <label for="star5" title="5 stars"></label>
+                    
+                    <input type="radio" name="rating" value="4" id="star4" 
+                           {% if user_rating and user_rating.rating == 4 %}checked{% endif %}>
+                    <label for="star4" title="4 stars"></label>
+                    
+                    <input type="radio" name="rating" value="3" id="star3" 
+                           {% if user_rating and user_rating.rating == 3 %}checked{% endif %}>
+                    <label for="star3" title="3 stars"></label>
+                    
+                    <input type="radio" name="rating" value="2" id="star2" 
+                           {% if user_rating and user_rating.rating == 2 %}checked{% endif %}>
+                    <label for="star2" title="2 stars"></label>
+                    
+                    <input type="radio" name="rating" value="1" id="star1" 
+                           {% if user_rating and user_rating.rating == 1 %}checked{% endif %}>
+                    <label for="star1" title="1 star"></label>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="review" class="form-label fw-bold">Your Review</label>
+                <textarea name="review" id="review" class="form-control" rows="3" 
+                          placeholder="Share your thoughts about this course...">{% if user_rating %}{{ user_rating.review }}{% endif %}</textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="fas {% if user_rating %}fa-edit{% else %}fa-paper-plane{% endif %}"></i>
+                {% if user_rating %}Update{% else %}Submit{% endif %} Review
+            </button>
+            
+            {% if user_rating %}
+                <small class="text-muted ms-2">
+                    <i class="fas fa-info-circle"></i> You rated this course {{ user_rating.rating }} stars
+                </small>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<script>
+// Add active class animation on star click
+document.querySelectorAll('.rating-stars label').forEach(label => {
+    label.addEventListener('click', function() {
+        // Remove active class from all labels
+        document.querySelectorAll('.rating-stars label').forEach(l => {
+            l.classList.remove('active');
+        });
+        // Add active class to clicked label and its siblings
+        let siblings = this.parentElement.querySelectorAll('label');
+        let index = Array.from(siblings).indexOf(this);
+        for (let i = index; i < siblings.length; i++) {
+            siblings[i].classList.add('active');
+        }
+    });
+});
+</script>
