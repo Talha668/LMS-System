@@ -445,4 +445,19 @@ class LearningPathEnrollment(models.Model):
             self.completed_at = timezone.now()
             self.save()
 
-        return progress        
+        return progress  
+
+
+class Bookmark(models.Model):
+    """User bookmarks for lessons"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookmarks')
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='bookmarks')
+    note = models.TextField(blank=True, help_text="Optional mote for the bookmarks")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'lesson']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.lesson.title}"    
