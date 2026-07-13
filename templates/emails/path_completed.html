@@ -1,0 +1,29 @@
+<!-- templates/emails/path_completed.html -->
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>🎉 Learning Path Completed!</h2>
+
+<p>Dear {{ user.get_full_name }},</p>
+
+<p>Congratulations on completing the <strong>{{ path.title }}</strong> learning path!</p>
+
+<div style="background: #e8f5e9; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #4caf50;">
+    <h3>🏆 Achievement Unlocked</h3>
+    <p>You've completed all courses in this learning path:</p>
+    <ul>
+        {% for path_course in path.path_courses.all %}
+            <li>✅ {{ path_course.course.title }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<p>You've gained comprehensive knowledge in this subject area!</p>
+
+<a href="{{ site_url }}{% url 'course_list' %}" class="button">Explore More Learning Paths</a>
+
+<p>Keep up the great work!</p>
+
+<p>Best regards,<br>
+The {{ platform_name }} Team</p>
+{% endblock %}

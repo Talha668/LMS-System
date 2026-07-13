@@ -1,0 +1,25 @@
+<!-- templates/emails/enrollment.html -->
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>Enrollment Confirmation</h2>
+
+<p>Dear {{ user.get_full_name }},</p>
+
+<p>You have successfully enrolled in <strong>{{ course.title }}</strong>!</p>
+
+<div style="background: #f0f0f0; padding: 20px; border-radius: 5px; margin: 20px 0;">
+    <h3>Course Details:</h3>
+    <p><strong>Course:</strong> {{ course.title }}</p>
+    <p><strong>Instructor:</strong> {{ course.instructor.get_full_name }}</p>
+    <p><strong>Level:</strong> {{ course.get_level_display }}</p>
+    <p><strong>Price:</strong> {% if course.price == 0 %}Free{% else %}${{ course.price }}{% endif %}</p>
+</div>
+
+<a href="{{ site_url }}{% url 'course_dashboard' course.id %}" class="button">Go to Course Dashboard</a>
+
+<p>We wish you an enjoyable learning experience!</p>
+
+<p>Best regards,<br>
+The {{ platform_name }} Team</p>
+{% endblock %}

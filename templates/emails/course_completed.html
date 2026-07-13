@@ -1,0 +1,28 @@
+<!-- templates/emails/course_completed.html -->
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>🎉 Congratulations! Course Completed</h2>
+
+<p>Dear {{ user.get_full_name }},</p>
+
+<p>Congratulations on successfully completing <strong>{{ course.title }}</strong>!</p>
+
+<div style="background: #e8f5e9; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #4caf50;">
+    <h3>🏆 Certificate Earned</h3>
+    <p>Your certificate is now available in your profile.</p>
+    <p><strong>Certificate ID:</strong> {{ certificate.certificate_id }}</p>
+    <p><strong>Issued Date:</strong> {{ certificate.issued_at|date:"M d, Y" }}</p>
+</div>
+
+<a href="{{ site_url }}{% url 'my_certificates' %}" class="button">View My Certificates</a>
+
+<p>What's next? Continue your learning journey with another course!</p>
+
+<a href="{{ site_url }}{% url 'course_list' %}" class="button" style="background: #28a745;">Browse More Courses</a>
+
+<p>Keep learning and growing!</p>
+
+<p>Best regards,<br>
+The {{ platform_name }} Team</p>
+{% endblock %}

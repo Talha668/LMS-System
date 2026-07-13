@@ -334,6 +334,7 @@ class Rating(models.Model):
         super().save(*args, **kwargs)
         self.course.update_rating()    
 
+
 class Category(models.Model):
     """Course categories for better organization"""
     name = models.CharField(max_length=100, unique=True)

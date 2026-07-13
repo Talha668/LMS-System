@@ -1,0 +1,98 @@
+<!-- templates/courses/learning_path_detail.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ path.title }} - Learning Path{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Path Header -->
+            <h1>{{ path.title }}</h1>
+            <p class="text-muted">
+                <i class="fas fa-clock"></i> {{ path.estimated_duration }} hours
+                <span class="mx-2">|</span>
+                <span class="badge bg-primary">{{ path.get_level_display }}</span>
+                {% if path.category %}
+                    <span class="badge bg-info">{{ path.category.name }}</span>
+                {% endif %}
+            </p>
+            
+            {% if path.image %}
+                <img src="{{ path.image.url }}" class="img-fluid rounded mb-3" alt="{{ path.title }}">
+            {% endif %}
+            
+            <h4>Description</h4>
+            <p>{{ path.description }}</p>
+            
+            <!-- Course List -->
+            <h4 class="mt-4">Courses in this Path</h4>
+            <div class="list-group">
+                {% for path_course in path.path_courses.all %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-secondary me-2">{{ forloop.counter }}</span>
+                            <strong>{{ path_course.course.title }}</strong>
+                            {% if not path_course.is_required %}
+                                <span class="badge bg-warning">Optional</span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            {% if user.is_authenticated %}
+                                {% if user.enrollments.filter.course == path_course.course %}
+                                    <span class="text-success"><i class="fas fa-check-circle"></i> Enrolled</span>
+                                {% else %}
+                                    <a href="{% url 'enroll_course' path_course.course.id %}" class="btn btn-primary btn-sm">
+                                        Enroll
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                <a href="{% url 'login' %}" class="btn btn-primary btn-sm">Login to Enroll</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Path Progress Card -->
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Your Progress</h5>
+                </div>
+                <div class="card-body">
+                    {% if enrollment %}
+                        <div class="text-center">
+                            <h2>{{ enrollment.progress|floatformat:0 }}%</h2>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-success" style="width: {{ enrollment.progress }}%"></div>
+                            </div>
+                            <p>{{ enrollment.path.path_courses.count }} courses</p>
+                            {% if enrollment.completed %}
+                                <span class="badge bg-success">✅ Completed</span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <p class="text-center">You haven't started this learning path yet.</p>
+                        <a href="{% url 'enroll_learning_path' path.id %}" class="btn btn-primary w-100">
+                            <i class="fas fa-plus-circle"></i> Start Learning Path
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-body">
+                    <h6>Path Statistics</h6>
+                    <p><i class="fas fa-users"></i> {{ path.total_enrollments }} students enrolled</p>
+                    <p><i class="fas fa-graduation-cap"></i> {{ path.total_courses }} courses</p>
+                    <p><i class="fas fa-check-circle"></i> {{ path.completion_rate }}% completion rate</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

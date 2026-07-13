@@ -1,7 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Course, Enrollment, Lesson, QuizAttempt, Quiz, UserAnswer, Certificate, DiscussionReply, DiscussionThread, LessonProgress, Rating
+from django.db import models
+from .models import (
+    Course, Enrollment, Lesson, QuizAttempt, Quiz, UserAnswer, Certificate,
+    DiscussionReply, DiscussionThread, LessonProgress, Rating, Category, LearningPath,
+    LearningPathEnrollment, Bookmark
+)
 from .forms import UserAnswerForm, DiscussionThreadForm, DiscussionReplyForm, RatingForm
 from django.utils import timezone
 from reportlab.lib.pagesizes import A4
@@ -9,12 +14,13 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.units import inch 
 from reportlab.lib import colors
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.db.models import Avg, Count, Q
 from django.core.mail import send_mail
 from django.conf import settings
-
-
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .analytics import AnalyticsService
+from .notifications import EmailService
 
 
 
@@ -26,52 +32,91 @@ from django.conf import settings
 
 
 def course_list(request):
-    # Course list with search and filter
+    """Course list with search and filter"""
     courses = Course.objects.filter(is_published=True)
 
     # Search functionality
     search_query = request.GET.get('search', '')
     if search_query:
         courses = courses.filter(
-            models.Q(title__icontains=search_query) |
-            models.Q(description__icontains=search_query)
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(category__name__icontains=search_query) |
+            Q(instructor__username__icontains=search_query) |
+            Q(isntructor__firstname__icontains=search_query) |
+            Q(instructor__lastname__icontains=search_query)
         )
 
-    # Filter by category
-    category = request.GET.get('category', '')
-    if category:
-        courses = courses.filter(category=category)
+        # Filter by category
+        category_slug = request.GET.get('category', '')
+        if category_slug:
+            courses = courses.filter(category__slug=category_slug)
 
-    # Filter by level
-    level = request.Get.get('level', '')
-    if level:
-        courses = courses.filter(level=level)
+        # Filter by level
+        level = request.GET.get('level', '')
+        if level:
+            courses = courses.filter(level=level)
 
-    # Sort options
-    sort = request.GET.get('sort', 'newest')
-    if sort == 'newest':
-        courses = courses.order_by('-created_at')
-    elif sort == 'popular':
-        courses = courses.annotate(enrollment_count=Count('enrollments')).order_by('-enrollment_count')
-    elif sort == 'rating':
-        courses = courses.order_by('-average_rating')
-    elif sort == 'price_low':
-        courses = courses.order_by('price')
-    elif sort == 'price_high':
-        courses = courses.order_by('-price')
+        # Filter by price
+        price_type = request.GET.get('price', '')
+        if price_type == 'free':
+            courses = courses.filter(price=0)
+        if price_type == 'paid':
+            courses = courses.filter(price__gt=0)
 
-    # Get categories for filter
-    categories = courses.objects.filter(is_published=True).value_list('category', flat=True).distinct()
-    categories = [cat for cat in categories if cat]
-    context = {
-        'courses': courses,
-        'search_query': search_query,
-        'category': category,
-        'level': level,
-        'sort': sort,
-        'categories': categories,
-    }          
-    return render(request, 'courses/course_list.html', context)
+        # Filter by rating
+        min_rating = request.GET.get('rating', '')
+        if min_rating:
+            try:
+                min_rating = float(min_rating)
+                courses = courses.filter(average_rating__gt=min_rating)
+            except ValueError:
+                pass
+
+        # Sort options
+        sort = request.GET.get('sort', 'newest')
+        if sort == 'newest':
+            courses = courses.order_by('-created_at')
+        elif sort == 'popular':
+            courses = courses.filter(enrollment_count=Count('enrollments')).order_by('-enrollment_count')
+        elif sort == 'rating' :
+            courses = courses.order_by('-average_rating')
+        elif sort == 'price_low':
+            courses = courses.order_by('price')
+        elif sort ==  'price_hign':
+            courses = courses.order_by('-price')
+        elif sort == 'title':
+            courses = courses.order_by('title')
+
+        # Get categories for filter
+        categories = Category.objects.all()
+
+        # Get lerning path for recommedations
+        learning_paths = LearningPath.objects.filter(is_published=True)[:3]
+
+        # pagination
+        paginator = Paginator(courses, 12)     # 12 courses per page
+        page = request.GET.get('page')
+        try:
+            courses = paginator.page(page)
+        except PageNotAnInteger:
+            courses = paginator.page(1)
+        except EmptyPage:
+            courses = paginator.page(paginator.num_pages)
+
+        context = {
+            'courses': courses,
+            'search_query': search_query,
+            'categpory_slug': category_slug,
+            'level': level,
+            'price_type': price_type,
+            'min_rating': min_rating,
+            'sort': sort,
+            'categories': categories,
+            'learning_paths': learning_paths
+        }  
+
+        return render(request, 'courses/courses_list.html', context) 
 
 
 def course_detail(request, course_id):
@@ -646,4 +691,177 @@ def add_rating(request, course_id):
         else:
             messages.error(request, 'Invalid rating form')
 
-    return redirect('course_detail', course_id=course_id)                
+    return redirect('course_detail', course_id=course_id) 
+
+
+@login_required
+def learning_path_list(request):
+    """List all learning paths"""
+    paths = LearningPath.objects.filter(is_published=True)
+
+    # Filter by category
+    category = request.GET.get('category', '')
+    if category:
+        paths = paths.filter(category__slug=category)
+
+    # Filter by level
+    level = request.GET.get('level', '')
+    if level:
+        paths = paths.filter(level=level)
+
+    context = {
+        'paths': paths,
+        'categories': Category.objects.all(),
+    }    
+    return render(request, 'courses/learning_path_list.html', context)
+
+
+@login_required
+def learning_path_detail(request, slug):
+    """View learning path detail"""
+    path = get_object_or_404(LearningPath, slug=slug, is_published=True)
+
+    # Get or create enrollment
+    enrollment, created = LearningPathEnrollment.objects.get_or_create(
+        user=request.user,
+        path=path
+    )
+
+    if not created:
+        enrollment.calculate_progress()
+
+    context = {
+        'path': path,
+        'enrollment': enrollment,
+    }    
+    return render(request, 'courses/learning_path_detail.html', context)
+
+
+@login_required
+def enroll_learning_path(request, slug):
+    """Enroll in a learning path"""
+    path = get_object_or_404(LearningPath, slug=slug, is_published=True)
+
+    enrollment, created = LearningPathEnrollment.objects.get_or_create(
+        user=request.user,
+        path=path
+    )
+
+    if created:
+        messages.success(request, f"Successfully enrolled in {path.title}!")
+
+        # Auto enroll in courses in that path
+        for path_course in path.path_courses.all():
+            Enrollment.objects.get_or_create(
+                student=request.user,
+                course=path_course.course
+            )
+
+        # Send notification
+        try:
+            EmailService.send_enrollment_email(request.user, path)
+        except:
+            pass
+    else:
+        messages.info(request, f"You're already enrolled in {path.title}.")
+
+    return redirect('learning_path_detail', slug=slug)
+
+
+@login_required
+def toggle_bookmark(request, lesson_id):
+    """Toggle bookmark for a lesson"""
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+
+    bookmark, created = Bookmark.objects.get_or_create(
+        user=request.user,
+        lesson=lesson
+    )
+
+    if not created:
+        bookmark.delete()
+        message = f"Removed bookmark form {lesson.title}"
+        bookmarked = False
+    else:
+        message = f"Added bookmark for {lesson.title}"
+        bookmarked = True
+
+    if request.headers.get('x-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'bookmarked': bookmarked,
+            'message': message
+        })        
+    
+    messages.success(request, message)
+    return redirect('lesson_detail', course_id=lesson.module.course.id, lesson_id=lesson.id)
+
+
+@login_required
+def my_bookmarks(request):
+    """View all user bookmarks"""
+    bookmarks = Bookmark.objects.filter(user=request.user)
+
+    context = {
+        'bookmarks': bookmarks,
+    }
+
+    return render(request, 'courses/my_bookmarks.html', context)
+
+
+@login_required
+def my_progress(request):
+    """view user progress analytics"""
+    progress_data = AnalyticsService.get_user_progress(request.user)
+
+    # Get recent activities
+    recent_lessons = LessonProgress.objects.filter(
+        student=request.user
+    ).order_by('-completed_at')[:10]
+
+    recent_quizzes = QuizAttempt.objects.filter(
+        student=request.user
+    ).order_by('-completed_at')[:10]
+
+    context = {
+        'progress_data': progress_data,
+        'recent_lessons': recent_lessons,
+        'recent_quizzes': recent_quizzes,
+    }
+
+    return render(request, 'courses/my_progress.html', context)
+
+
+@login_required
+def course_analytics(request, course_id):
+    """View analytics for a specific course (instructor only)"""
+    course = get_object_or_404(Course, id=course_id)
+
+    # Check if user is instructor or admin
+    if request.user != course.instructor and not request.user.is_superuser:
+        messages.error(request, "You don't have perimission to view this analytics.")
+        return redirect('course_detail', course_id=course_id)
+    
+    analytics = AnalyticsService.get_course_anaytics(course)
+
+    context = {
+        'course': course,
+        'analytics': analytics,
+    }
+
+    return render(request, 'courses/course_analytics.html', context)
+
+
+@login_required
+def platform_analytics(request):
+    """View platform wide analytics (for admin)"""
+    if not request.user.is_superuser:
+        messages.error(request, "You don't have permission to view platform analytics")
+        return redirect('home')
+    
+    analytics = AnalyticsService.get_platform_statistics()
+
+    context = {
+        'analytics': analytics,
+    }
+
+    return render(request, 'courses/paltform_analytics.html', context)

@@ -1,0 +1,25 @@
+<!-- templates/emails/welcome.html -->
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>Welcome to {{ platform_name }}! 🎉</h2>
+
+<p>Dear {{ user.get_full_name }},</p>
+
+<p>We're thrilled to have you join our learning community! {{ platform_name }} is designed to help you learn new skills, advance your career, and connect with a community of like-minded learners.</p>
+
+<h3>Here's what you can do next:</h3>
+<ul>
+    <li><strong>Browse Courses:</strong> Explore our wide range of courses across various categories</li>
+    <li><strong>Enroll in Your First Course:</strong> Start your learning journey today</li>
+    <li><strong>Connect with Others:</strong> Join discussions and collaborate with fellow learners</li>
+    <li><strong>Track Your Progress:</strong> Monitor your learning achievements and earn certificates</li>
+</ul>
+
+<a href="{{ site_url }}{% url 'course_list' %}" class="button">Start Learning Now</a>
+
+<p>If you have any questions, feel free to reach out to our support team.</p>
+
+<p>Happy learning!<br>
+The {{ platform_name }} Team</p>
+{% endblock %}

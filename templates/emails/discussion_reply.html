@@ -1,0 +1,27 @@
+<!-- templates/emails/discussion_reply.html -->
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>New Reply in Discussion</h2>
+
+<p>Dear {{ user.get_full_name }},</p>
+
+<p>There's a new reply in the discussion thread <strong>{{ thread.title }}</strong>.</p>
+
+<div style="background: #f0f0f0; padding: 20px; border-radius: 5px; margin: 20px 0;">
+    <h4>Original Thread:</h4>
+    <p><strong>{{ thread.title }}</strong></p>
+    <p><strong>Course:</strong> {{ course.title }}</p>
+</div>
+
+<div style="background: #e3f2fd; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #2196f3;">
+    <h4>New Reply:</h4>
+    <p><strong>From:</strong> {{ reply.author.get_full_name }}</p>
+    <p>{{ reply.content }}</p>
+</div>
+
+<a href="{{ site_url }}{% url 'discussion_thread' course.id thread.id %}" class="button">View Discussion</a>
+
+<p>Best regards,<br>
+The {{ platform_name }} Team</p>
+{% endblock %}

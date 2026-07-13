@@ -1,0 +1,31 @@
+<!-- templates/emails/quiz_results.html -->
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>Quiz Results: {{ quiz.title }}</h2>
+
+<p>Dear {{ user.get_full_name }},</p>
+
+<p>You have completed the quiz <strong>{{ quiz.title }}</strong>.</p>
+
+<div style="background: {% if passed %}#e8f5e9{% else %}#ffebee{% endif %}; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid {% if passed %}#4caf50{% else %}#f44336{% endif %};">
+    <h3>📊 Your Score: {{ score|floatformat:1 }}%</h3>
+    <p><strong>Status:</strong> {% if passed %}✅ Passed{% else %}❌ Not Passed{% endif %}</p>
+    <p><strong>Passing Score:</strong> {{ quiz.passing_score }}%</p>
+    <p><strong>Time Spent:</strong> {{ attempt.time_spent }} minutes</p>
+</div>
+
+{% if passed %}
+    <p>Great job! You've successfully passed this quiz.</p>
+{% else %}
+    <p>Don't worry! You can try again to improve your score.</p>
+    <a href="{{ site_url }}{% url 'start_quiz' course_id lesson_id %}" class="button">Retry Quiz</a>
+{% endif %}
+
+<a href="{{ site_url }}{% url 'course_dashboard' course_id %}" class="button" style="background: #6c757d;">Back to Course</a>
+
+<p>Keep learning!</p>
+
+<p>Best regards,<br>
+The {{ platform_name }} Team</p>
+{% endblock %}
