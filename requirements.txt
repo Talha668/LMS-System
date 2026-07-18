@@ -11,3 +11,7 @@ django-crispy-forms
 crispy-bootstrap5
 django-ckeditor
 django-extensions
+requests
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers

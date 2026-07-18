@@ -9,6 +9,9 @@ import uuid
 
 
 
+
+
+
 class Course(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -136,6 +139,26 @@ class Lesson(models.Model):
     video_url = models.URLField(blank=True, null=True)
     duration = models.PositiveIntegerField(help_text='Duration in minutes')
     order = models.PositiveIntegerField(default=0)
+    video_file = models.FileField(
+        upload_to='lesson_videos/',
+        null=True,
+        blank=True,
+        help_text="Upload video file for the lesson"
+    )
+    video_duration = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        help_text="Video duration in seconds"
+    )
+    video_thumbnail = models.ImageField(
+        upload_to='video_thumbnail/',
+        null=True,
+        blank=True
+    )
+    allow_download = models.BooleanField(
+        default=False,
+        help_text="Allow students to download the video"
+    )
 
     prerequisites = models.ManyToManyField(
         'self',
@@ -269,7 +292,6 @@ class Certificate(models.Model):
         return f"Certificate {self.certificate_id} - {self.student.username} - {self.course.title}"
 
     def generate_certificate_id(self):
-        import uuid
         return f"CERT-{uuid.uuid4().hex[:12].upper()}"
 
     def save(self, *args, **kwargs):
@@ -462,3 +484,89 @@ class Bookmark(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.lesson.title}"    
+    
+
+class Payment(models.Model):
+    """Payment records for course purchases"""
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('refunded', 'Refunded'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='payments')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_id = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.course.title} - {self.status}"    
+
+
+class Achievement(models.Model):
+    """User achievements and badges"""
+    ACHIEVEMENT_TYPES = [
+        ('course', 'Course Achievement'),
+        ('quiz', 'Quiz Achievement'),
+        ('streak', 'Streak Achievement'),
+        ('level_up', 'Level Up'),
+        ('special', 'Special Achievement'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='achievements')
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    type = models.CharField(max_length=20, choices=ACHIEVEMENT_TYPES)
+    points = models.PositiveBigIntegerField(default=0)
+    icon = models.CharField(max_length=50, blank=True, help_text='Font Awesome icon class')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['user', 'name']
+
+    def __str__(self):
+        return f"{self.name.username} - {self.name}"    
+    
+
+class VideoProgress(models.Model):
+    """Track video viewing progress"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='video_progress')
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='video_progress')
+    current_time = models.PositiveBigIntegerField(default=0, help_text="Current position in seconds")
+    total_watched = models.PositiveBigIntegerField(default=0, help_text="Total time watched in second")
+    completed = models.BooleanField(default=False)
+    last_watched = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['user', 'lesson']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.lesson.title} - {self.current_time}s"
+
+    def update_progress(self, current_time):
+        self.current_time = current_time
+
+        # If vudeo duration is set and user has matched enough
+        if self.lesson.video_duration:
+            watched_percentage = (current_time / self.lesson.video_duration) * 100
+            if watched_percentage >= 80:     # Mark as completed if 80% watched
+                self.completed = True
+                # Mark lesson as completed
+                LessonProgress.objects.get_or_create(
+                    student=self.user,
+                    lesson=self.lesson,
+                    defaults={f'completed': True, 'completed_at': timezone.now()}
+                )
+
+        self.save()        

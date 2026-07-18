@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv 
 import dj_database_url
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -48,9 +49,13 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'ckeditor',
     'django_extensions',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -81,6 +86,29 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'lms_project.wsgi.application'
 
+# Rest framwework settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES':(
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ),
+    'DEFAULT_PAGINATION_CLASSES': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+}
+
+# Cors settings
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    'http://localhost:3000',
+]
+
+# JWT settings
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -195,6 +223,18 @@ if DEBUG:
 
 # Site URL for emails
 SITE_URL = os.getenv('site_url')
+
+# Lemon Squeezy configuration
+LEMON_SQUEEZY_API_KEY = os.getenv('LEMON_SQUEEZY_API_KEY')
+LEMON_SQUEEZY_STORE_ID = os.getenv('LEMON_SQUEEZY_STORE_ID')
+LEMON_SQUEEZY_WEBHOOK_SECRETS = os.getenv('LEMON_SQUEEZY_WEBHOOK_SECRETS')
+LEMON_SQUEEZY_API_URL = os.getenv('LEMON_SQUEEZY_API_URL')
+
+# Payments settings
+PAYMENT_CURRENCY = 'USD'
+PAYMENT_SUCCESS_URL = os.getenv('PAYMENT_SUCCESS_URL', '/payment/success/')
+PAYMENT_CANCEL_URL = os.getenv('PAYMENT_CANCEL_URL', '/payment/cancel/')
+
 
 # Cache settings
 CACHES = {

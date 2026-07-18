@@ -11,7 +11,7 @@ def notification_count(request):
         # Get unread replies (simplified - can be expanded)
         notification_count = 0
 
-        # Check for new replies's to user's thread
+        # Check for new replies to user's thread
         user_threads = DiscussionThread.objects.filter(author=request.user)
         for thread in user_threads:
             # Count replies that are not by the user

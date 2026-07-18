@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from courses.gamification import GamificationService
+
+
 
 
 
@@ -33,6 +36,10 @@ class Profile(models.Model):
     last_activity = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    xp = models.PositiveBigIntegerField(default=0)
+    level = models.PositiveBigIntegerField(default=1)
+    streak_days = models.PositiveBigIntegerField(default=0)
+    last_activity_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username} Profile"
@@ -69,3 +76,29 @@ class Profile(models.Model):
         """get all certificates earned"""
         from courses.models import Certificate
         return Certificate.objects.filter(student=self.user)
+    
+    def update_streak(self):
+        """Update daily learning streak"""
+        today = timezone.now().date()
+
+        if self.last_activity_date:
+            days_diff = (today - self.last_activity_date).days
+
+            if days_diff == 1:
+                self.streak_days += 1
+            elif days_diff > 1:
+                self.streak_days = 0
+        
+        else:
+            self.streak_days = 1
+
+        self.last_activity_date = today
+        self.save()
+
+        # Award xp for streak
+        if self.streak_days >= 7:    
+            GamificationService.award_xp(
+                self.user,
+                50,
+                f'7-day learning streak bonus!'
+            )                    
