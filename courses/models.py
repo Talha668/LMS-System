@@ -401,22 +401,22 @@ class LearningPath(models.Model):
     class Meta:
         ordering = ['-created_at']
 
-        def __str__(self):
-            return self.title
-        
-        def total_courses(self):
-            return self.path_courses.count()
-        
-        def total_enrollment(self):
-            return LearningPathEnrollment.objects.filter(path=self).count()
-        
-        def completion_rate(self):
-            enrollments = LearningPathEnrollment.objects.filter(path=self)
-            if not enrollments.exists():
-                return 0
-            completed = enrollments.filter(completed=True).count()
-            return int((completed / enrollments.count()) * 100)
-        
+    def __str__(self):
+        return self.title
+    
+    def total_courses(self):
+        return self.path_courses.count()
+    
+    def total_enrollment(self):
+        return LearningPathEnrollment.objects.filter(path=self).count()
+    
+    def completion_rate(self):
+        enrollments = LearningPathEnrollment.objects.filter(path=self)
+        if not enrollments.exists():
+            return 0
+        completed = enrollments.filter(completed=True).count()
+        return int((completed / enrollments.count()) * 100)
+    
 
 class LearningPathCourse(models.Model):
     """Link courses to learning path in order"""
