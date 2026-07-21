@@ -1,0 +1,180 @@
+/* static/css/dark-mode.css */
+
+/* Dark mode variables */
+[data-theme="dark"] {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-card: #1a1a2e;
+    --text-primary: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --border-color: #2d2d44;
+    --shadow-color: rgba(0,0,0,0.5);
+    --hover-bg: #2d2d44;
+}
+
+/* Dark mode body */
+body.dark-mode {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Dark mode cards */
+body.dark-mode .card {
+    background-color: var(--bg-card);
+    border-color: var(--border-color);
+    box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+body.dark-mode .card-header {
+    background-color: var(--bg-secondary);
+    border-bottom-color: var(--border-color);
+}
+
+/* Dark mode navbar */
+body.dark-mode .navbar-dark {
+    background-color: #0d0d1a !important;
+}
+
+/* Dark mode forms */
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode .form-select:focus {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* Dark mode tables */
+body.dark-mode .table {
+    color: var(--text-primary);
+}
+
+body.dark-mode .table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: var(--bg-secondary);
+}
+
+/* Dark mode modals */
+body.dark-mode .modal-content {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+}
+
+body.dark-mode .modal-header {
+    border-bottom-color: var(--border-color);
+}
+
+body.dark-mode .modal-footer {
+    border-top-color: var(--border-color);
+}
+
+/* Dark mode dropdowns */
+body.dark-mode .dropdown-menu {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .dropdown-item {
+    color: var(--text-primary);
+}
+
+body.dark-mode .dropdown-item:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+/* Dark mode list groups */
+body.dark-mode .list-group-item {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .list-group-item:hover {
+    background-color: var(--hover-bg);
+}
+
+/* Dark mode progress bars */
+body.dark-mode .progress {
+    background-color: var(--bg-secondary);
+}
+
+/* Dark mode badges */
+body.dark-mode .badge.bg-light {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary);
+}
+
+/* Dark mode accordion */
+body.dark-mode .accordion-item {
+    background-color: var(--bg-card);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .accordion-button {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+body.dark-mode .accordion-button:not(.collapsed) {
+    background-color: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+/* Dark mode alerts */
+body.dark-mode .alert {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+/* Dark mode theme toggle button */
+body.dark-mode .theme-toggle {
+    color: var(--text-primary) !important;
+}
+
+.theme-toggle {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(20deg);
+}
+
+/* Dark mode scrollbar */
+body.dark-mode::-webkit-scrollbar {
+    width: 8px;
+}
+
+body.dark-mode::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+body.dark-mode::-webkit-scrollbar-thumb {
+    background: #2d2d44;
+    border-radius: 4px;
+}
+
+body.dark-mode::-webkit-scrollbar-thumb:hover {
+    background: #3d3d54;
+}
+
+/* Dark mode transitions */
+body.dark-mode,
+body.dark-mode .card,
+body.dark-mode .form-control,
+body.dark-mode .dropdown-menu,
+body.dark-mode .modal-content {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

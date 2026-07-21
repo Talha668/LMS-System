@@ -195,7 +195,7 @@ class LemonSqueezyPaymentService:
         raise Exception("Failed to create product in lemon squeezy")   
 
 
-    def handle_webhooks(self, request):
+    def handle_webhook(self, request):
         """Handle lemon squeezy webhook events"""
         # Verify webhook signature
         signature = request.headers.get('X-Signature')

@@ -1,0 +1,183 @@
+/* static/css/mobile-responsive.css */
+
+/* Mobile-first responsive design */
+@media (max-width: 768px) {
+    /* Navigation */
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    /* Hero section */
+    .hero-section {
+        padding: 2rem 1rem !important;
+    }
+    
+    .hero-section h1 {
+        font-size: 1.8rem !important;
+    }
+    
+    .hero-section .lead {
+        font-size: 1rem !important;
+    }
+    
+    /* Cards */
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .card-img-top {
+        height: 150px !important;
+    }
+    
+    /* Course grid */
+    .course-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    /* Dashboard */
+    .dashboard-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    
+    .dashboard-stats .stat-card {
+        padding: 0.75rem;
+    }
+    
+    .dashboard-stats .stat-card h2 {
+        font-size: 1.5rem;
+    }
+    
+    /* Forms */
+    .form-control,
+    .form-select {
+        font-size: 16px !important; /* Prevent zoom on iOS */
+    }
+    
+    /* Buttons */
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .btn-lg {
+        padding: 0.6rem 1.2rem;
+        font-size: 1rem;
+    }
+    
+    /* Tables */
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+    
+    .table-responsive th,
+    .table-responsive td {
+        padding: 0.5rem;
+    }
+    
+    /* Modals */
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    /* Quiz */
+    .quiz-option {
+        padding: 0.75rem 1rem;
+    }
+    
+    /* Discussion */
+    .discussion-thread {
+        padding: 0.75rem;
+    }
+    
+    /* Footer */
+    footer {
+        padding: 1.5rem 0 !important;
+    }
+    
+    /* Container */
+    .container {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    /* Profile page */
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+    }
+    
+    /* Course detail */
+    .course-meta {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    /* Learning path */
+    .path-courses {
+        flex-direction: column;
+    }
+}
+
+/* Tablet devices */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .course-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    
+    .dashboard-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.75rem;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) {
+    /* Improve touch targets */
+    .btn,
+    .nav-link,
+    .list-group-item,
+    .accordion-button {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Remove hover effects that cause issues on touch */
+    .hover-card:hover {
+        transform: none;
+    }
+    
+    .stat-box:hover {
+        transform: none;
+    }
+}
+
+/* Accessibility - Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+}

@@ -21,6 +21,7 @@ from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .analytics import AnalyticsService
 from .notifications import EmailService
+from .payment import LemonSqueezyPaymentService
 
 
 
@@ -865,3 +866,63 @@ def platform_analytics(request):
     }
 
     return render(request, 'courses/paltform_analytics.html', context)
+
+
+@login_required
+def initiate_payment(request, course_id):
+    """Initiate payment for a course"""
+    course = get_object_or_404(Course, id=course_id)
+
+    if course.price == 0:
+        return redirect('enroll_course', course_id=course_id)
+    
+    payment_service = LemonSqueezyPaymentService()
+
+    try:
+        checkout_url = payment_service.create_checkout(request, course)
+        if checkout_url:
+            return redirect(checkout_url)
+        else:
+            messages.error(request, 'Failed to initiate payment. Please try again.')
+            return redirect('course_detail', course_id=course_id)
+    except Exception as e:
+        messages.error(request, f'Payment error: {str(e)}')
+        return redirect('course_detail', course_id=course_id)
+
+
+@login_required
+def payment_success(request, course_id):
+    """Payment success page"""
+    course = get_object_or_404(Course, id=course_id)
+
+    # Check if payemnt is successfull and user is enrolled
+    enrollment = Enrollment.objects.filter(
+        student=request.user,
+        course=course
+    ).first()
+
+    if not enrollment:
+        messages.warning(request, 'Your enrollment is being processed. You will be enrolled shortly.')
+        return redirect('course_detail', course_id=course_id)
+    
+    messages.success(request, f'Payment successfull. You are now enrolled in {course.title}.')
+    return redirect('course_dashboard', course_id=course_id)
+
+
+@login_required
+def payment_cancel(request, course_id):
+    """Payment cancel page"""
+    course = get_object_or_404(Course, id=course_id)
+    messages.info(request, 'Payment was cancelled. You can try again whenever you are ready.')
+    return redirect('course_detail', course_id=course_id)
+
+
+def lemon_squeezy_webhook(request):
+    """Handle lemon squeezy webhooks"""
+    payment_service = LemonSqueezyPaymentService()
+    success, message = payment_service.handle_webhook(request)
+
+    if success:
+        return JsonResponse({'status': 'success', 'message': message})
+    else:
+        return JsonResponse({'status': 'error', 'message': message}, status=400)

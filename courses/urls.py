@@ -36,4 +36,9 @@ urlpatterns = [
     # Anamytics URLs
     path('analytics/<course/<int:course_id>/', views.course_analytics, name='course_analytics'),
     path('analytics/my-progress/', views.my_progress, name='my_progress'),
+    # Payment URLs
+    path('payment/initiate/<int:course_id>/', views.initiate_payment, name='initiate_payment'),
+    path('payment/success/<int:course_id>/', views.payment_success, name='payment_success'),
+    path('payment/cancel/<int:course_id>/', views.payment_cancel, name='payment_cancel'),
+    path('payment/webhook/', views.lemon_squeezy_webhook, name='lemon_squeezy_webhook'),
 ]
