@@ -23,7 +23,7 @@ class Course(models.Model):
     is_published = models.BooleanField(default=False)
 
     # New fields
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, blank=True, null=True, related_name='category')
+    category = models.ForeignKey('Category', on_delete=models.CASCADE, blank=True, null=True, related_name='courses')
     level = models.CharField(max_length=20, choices=[
         ('beginner', 'Beginner'),
         ('intermediate', 'Intermediate'),
@@ -371,14 +371,14 @@ class Category(models.Model):
         ordering = ['order', 'name']
         verbose_name_plural = 'Categories'
 
-        def __str__(self):
-            return self.name
-        
-        def get_subcategories(self):
-            return self.subcategories.all()
-        
-        def course_count(self):
-            return self.courses.count()
+    def __str__(self):
+        return self.name
+    
+    def get_subcategories(self):
+        return self.subcategories.all()
+    
+    def course_count(self):
+        return self.courses.count()
         
         
 class LearningPath(models.Model):

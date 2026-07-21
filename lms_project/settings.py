@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
-from dotenv import load_dotenv 
+from dotenv import load_dotenv
 import dj_database_url
 from datetime import timedelta
 
@@ -118,7 +118,7 @@ if os.getenv('DATABASE_URL'):
     DATABASES = {
         'default' : dj_database_url.config(
             default=os.getenv('DATABASE_URL'),
-            conn_max=600
+            conn_max_age=600
         )
     }
 else:    
