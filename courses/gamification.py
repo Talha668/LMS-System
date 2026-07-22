@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from .models import Course, Enrollment, LessonProgress, QuizAttempt, Achievement
-from users.models import Profile
 
 
 
@@ -129,6 +128,7 @@ class GamificationService:
     @staticmethod
     def get_leaderboard(limit=10):
         """Get top users by XP"""
+        from users.models import Profile
         profiles = Profile.objects.filter(
             xp__gt=0
         ).order_by('-xp')[:limit]

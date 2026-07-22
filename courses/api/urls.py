@@ -6,14 +6,14 @@ from . import views
 
 
 
-urlPatterns = [
+urlpatterns = [
     # Auth
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('register/', views.reigister_api, name='api_register'),
     # Courses
     path('courses/', views.CourseListView.as_view(), name='api_courses'),
-    path('courses/<int:pk>/', views.CourseDetailView.as_views, name='api_course_detail'),
+    path('courses/<int:pk>/', views.CourseDetailView.as_view(), name='api_course_detail'),
     # Enrollment
     path('courses/<int:course_id>/enroll/', views.enroll_course_api, name='api_enroll'),
     path('my-enrollments/', views.my_enrollments_api, name='api_my_enrollments'),

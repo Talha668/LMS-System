@@ -34,7 +34,7 @@ urlpatterns = [
     path('lesson/<int:lesson_id>/bookmark/', views.toggle_bookmark, name='toggle_bookmark'),
     path('bookmarks/', views.my_bookmarks, name='my_bookmarks'),
     # Anamytics URLs
-    path('analytics/<course/<int:course_id>/', views.course_analytics, name='course_analytics'),
+    path('analytics/course/<int:course_id>/', views.course_analytics, name='course_analytics'),
     path('analytics/my-progress/', views.my_progress, name='my_progress'),
     # Payment URLs
     path('payment/initiate/<int:course_id>/', views.initiate_payment, name='initiate_payment'),

@@ -5,7 +5,7 @@ from django.db import models
 from .models import (
     Course, Enrollment, Lesson, QuizAttempt, Quiz, UserAnswer, Certificate,
     DiscussionReply, DiscussionThread, LessonProgress, Rating, Category, LearningPath,
-    LearningPathEnrollment, Bookmark
+    LearningPathEnrollment, Bookmark, User
 )
 from .forms import UserAnswerForm, DiscussionThreadForm, DiscussionReplyForm, RatingForm
 from django.utils import timezone
@@ -22,6 +22,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .analytics import AnalyticsService
 from .notifications import EmailService
 from .payment import LemonSqueezyPaymentService
+from datetime import timedelta
 
 
 
@@ -926,3 +927,157 @@ def lemon_squeezy_webhook(request):
         return JsonResponse({'status': 'success', 'message': message})
     else:
         return JsonResponse({'status': 'error', 'message': message}, status=400)
+    
+
+def home_view(request):
+    """
+    Home page view with statistics, featured courses, and categories
+    """
+    # Get featured courses (published with highest rating or most popular)
+    featured_courses = Course.objects.filter(
+        is_published=True
+    ).annotate(
+        enrollment_count=Count('enrollments')
+    ).order_by(
+        '-average_rating', '-enrollment_count'
+    )[:6]
+
+    # If courses with rating, get latest published courses
+    if not featured_courses:
+        featured_courses = Course.objects.filter(
+            is_published=True
+        ).order_by('-created_at')[:6]
+
+    # Get all published courses statistics
+    published_courses = Course.objects.filter(is_published=True)
+
+    # Platform statics
+    total_courses = published_courses.count()
+    total_students = User.objects.filter(
+        profile__user_type='student'
+    ).count()
+
+    # Count unique instructors or have publised courses
+    total_instructors = User.objects.filter(
+        courses_taught__is_published=True
+    ).distinct().count()
+
+    # Count total lessons across all published courses
+    total_lessons = 0
+    for course in published_courses:
+        total_lessons += course.modules.aggregate(
+            lesson_count=Count('lessons')
+        )['lesson_count'] or 0
+
+    # Get categories with course count with display
+    categories = Category.objects.annotate(
+        course_count=Count('courses', filter=models.Q(courses__is_published=True))
+    ).filter(
+        course_count__gt=0
+    ).order_by('-course_count')[:6]
+
+    # Get popular lerning path
+    learning_paths = LearningPath.objects.filter(
+        is_published=True
+    ).annotate(
+        enrollment_count=Count('enrollments')
+    ).order_by('-enrollment_count')[:3]
+
+    # Get recent enrollments count (last 30 days)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    recent_enrollmenst = Enrollment.objects.filter(
+        enrolled_at__gte=thirty_days_ago
+    ).count()
+
+    # Get top instructors (by course count rating)
+    top_instructors = User.objects.filter(
+        courses_taught__is_published=True
+    ).annotate(
+        course_count=Count('courses_taught'),
+        avg_rating=Avg('courses_taught__average_rating')
+    ).order_by(
+        '-course_count', '-avg_rating'
+    )[:4]
+
+    # Check if user is authenticated for personalized content
+    if request.user.is_authenticated:
+        # Get user''s enrolled courses for count
+        user_enrollments = request.user.enrollments.values_list('course_id', flat=True)
+
+        # Recommended courses from same categories as enrolled courses
+        enrolled_categories = Course.objects.filter(
+            id__in=user_enrollments
+        ).values_list('category', flat=True).distinct()
+
+        recommended_courses = Course.objects.filter(
+            is_punlished=True,
+            category__in=enrolled_categories
+        ).exclude(
+            id__in=user_enrollments
+        ).annotate(
+            enrollment_count=Count('enrollments')
+        ).order_by('-average_rating', '-enrollment_count')[:4]
+
+        # Get user's progress stats
+        total_completed_lessons = request.user.lesson_progress.filter(
+            completed=True
+        ).count()
+
+        user_course_completion = Enrollment.objects.filter(
+            student=request.user,
+            completed=True
+        ).count()
+
+        # Get user's achievements if gamification is enabled
+        user_achievements = getattr(request.user, 'achievements', None)
+        if user_achievements:
+            total_achievements = user_achievements.count()
+            recent_achievements = user_achievements.order_by('-created_at')[:3]
+        else:
+            total_achievements = 0
+            recent_achievements = []
+
+        # Get user's upcoming lessons (in progress)
+        in_progress_lessons = request.user.lesson_progress.filter(
+            completed=False
+        ).select_ralted('lesson__module__course')[:5]
+
+        context = {
+            'featured_courses': featured_courses,
+            'total_courses': total_courses,
+            'total_students': total_students,
+            'total_instructors': total_instructors,
+            'total_lessons': total_lessons,
+            'categories': categories,
+            'learning_paths': learning_paths,
+            'recent_enrollmets': recent_enrollmenst,
+            'top_instructors': top_instructors,
+            'recommended_courses': recommended_courses if request.user.is_authenticated else [],
+            'user_enrolled_count': request.user.enrollments.count() if request.user.is_authenticated else 0,
+            'user_completed_courses': user_course_completion if request.user.is_authenticated else 0,
+            'user_completed_lessons': total_completed_lessons if request.user.is_authenticated else 0,
+            'total_achievements': total_achievements if request.user.is_authenticated else 0,
+            'recent_achievements': recent_achievements if request.user.is_authenticated else [],
+            'in_progress_lessons': in_progress_lessons if request.user.is_authenticated else [],         
+        }     
+    else:
+        context = {
+            'featured_courses': featured_courses,
+            'total_courses': total_courses,
+            'total_students': total_students,
+            'total_instructors': total_instructors,
+            'total_lessons': total_lessons,
+            'categories': categories,
+            'learning_paths': learning_paths,
+            'recent_enrollments': recent_enrollmenst,
+            'top_instructors': top_instructors,
+            'recommended_courses': [],
+            'user_enrolled_count': 0,
+            'user_completed_courses': 0,
+            'user_completed_lessons': 0,
+            'total_achievements': 0,
+            'recent_achievements': [],
+            'in_progress_lessons': [],
+        }    
+
+    return render(request, 'home.html', context)    

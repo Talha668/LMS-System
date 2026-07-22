@@ -346,7 +346,7 @@ class Rating(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        uniques_together = ['course', 'user']
+        unique_together = ['course', 'user']
         ordering = ['-created_at']
 
     def __str__(self):
@@ -392,9 +392,9 @@ class LearningPath(models.Model):
         ('beginner', 'Beginner'),
         ('intermediate', 'Intermediate'),
         ('advances', 'Advanced'),
-    ], defailt='beginner')
+    ], default='beginner')
     extimated_duration = models.PositiveBigIntegerField(help_text='Estimated duartion in hours')
-    is_publised = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -427,7 +427,7 @@ class LearningPathCourse(models.Model):
 
     class Meta:
         ordering = ['order']
-        uniques_together = ['path', 'course']
+        unique_together = ['path', 'course']
 
     def __str__(self):
         return f"{self.path.title} - {self.course.title}"
@@ -443,7 +443,7 @@ class LearningPathEnrollment(models.Model):
     progress = models.FloatField(default=0.0)   # 0-100
 
     class Meta:
-        uniques_together = ['user', 'path']
+        unique_together = ['user', 'path']
 
     def __str__(self):
         return f"{self.user.username} - {self.path.title}"

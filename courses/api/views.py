@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from courses.payment import LemonSqueezyPaymentService
 from django.utils import timezone
 from courses.gamification import GamificationService
+from users.models import Profile
 
 
 

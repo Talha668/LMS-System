@@ -7,7 +7,7 @@ from .models import DiscussionThread
 
 def notification_count(request):
     """C0ntext processors to add notifiation to all templates"""
-    if request.user.is_authenticatd:
+    if request.user.is_authenticated:
         # Get unread replies (simplified - can be expanded)
         notification_count = 0
 

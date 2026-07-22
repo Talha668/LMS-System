@@ -10,5 +10,5 @@ class DiscussionThread(models.Model):
     pass
 
 
-class DiscussionReply(models.models):
+class DiscussionReply(models.Model):
     pass
